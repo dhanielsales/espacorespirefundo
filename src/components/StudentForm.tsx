@@ -68,7 +68,7 @@ export function StudentForm({
       parentEmail: student?.parentEmail || "",
       parentPhone: student?.parentPhone || "",
       observations: student?.observations || "",
-      planId: student?.planId || 0,
+      planId: 0 as number,
     },
     onSubmit: async ({ value }) => {
       mutation.mutate(value as CreateStudentInput);
@@ -150,29 +150,34 @@ export function StudentForm({
               )}
             </form.Field>
 
-            <form.Field
-              name="planId"
-              validators={{
-                onChange: ({ value }) => {
-                  const result =
-                    createStudentSchema.shape.planId.safeParse(value);
-                  return result.success
-                    ? undefined
-                    : result.error.issues[0]?.message;
-                },
-              }}
-            >
-              {(field) => (
-                <SelectPlan
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(Number(e.target.value))}
-                  onBlur={field.handleBlur}
-                  error={field.state.meta.errors.join(", ")}
-                  disabled={isEditing}
-                  required={!isEditing}
-                />
-              )}
-            </form.Field>
+            {!isEditing && (
+              <form.Field
+                name="planId"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (value === null || value === undefined || value === 0) {
+                      return "Plano é obrigatório";
+                    }
+
+                    const result =
+                      createStudentSchema.shape.planId.safeParse(value);
+                    return result.success
+                      ? undefined
+                      : result.error.issues[0]?.message;
+                  },
+                }}
+              >
+                {(field) => (
+                  <SelectPlan
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                    onBlur={field.handleBlur}
+                    error={field.state.meta.errors.join(", ")}
+                    required
+                  />
+                )}
+              </form.Field>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <form.Field

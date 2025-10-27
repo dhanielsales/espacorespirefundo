@@ -2,13 +2,23 @@ import { z } from "zod";
 
 export const createStudentSchema = z.object({
   fullName: z.string().min(1, "Nome completo é obrigatório").max(255),
-  email: z.string().email("Email inválido").max(255).optional(),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(255)
+    .or(z.literal(""))
+    .optional(),
   phone: z.string().max(25).optional(),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   parentName: z.string().max(255).optional(),
-  parentEmail: z.string().email("Email inválido").max(255).optional(),
+  parentEmail: z
+    .string()
+    .email("Email inválido")
+    .max(255)
+    .or(z.literal(""))
+    .optional(),
   parentPhone: z.string().max(25).optional(),
   observations: z.string().optional(),
   planId: z.number().int().positive("Plano é obrigatório"),
@@ -16,14 +26,14 @@ export const createStudentSchema = z.object({
 
 export const updateStudentSchema = z.object({
   fullName: z.string().min(1).max(255).optional(),
-  email: z.string().email().max(255).optional(),
+  email: z.string().email().max(255).or(z.literal("")).optional(),
   phone: z.string().max(25).optional(),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   parentName: z.string().max(255).optional(),
-  parentEmail: z.string().email().max(255).optional(),
+  parentEmail: z.string().email().max(255).or(z.literal("")).optional(),
   parentPhone: z.string().max(25).optional(),
   observations: z.string().optional(),
 });

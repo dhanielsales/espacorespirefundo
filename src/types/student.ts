@@ -1,3 +1,15 @@
+export interface StudentPlanEnrollment {
+  id: number; // studentToPlanId
+  planId: number;
+  planName: string;
+  planDescription: string | null;
+  planMonthlyFee: number;
+  planIsActive: number;
+  enrollmentIsActive: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Student {
   id: number;
   fullName: string;
@@ -10,14 +22,8 @@ export interface Student {
   observations: string | null;
   createdAt: string;
   updatedAt: string;
-  // Plan information (from JOIN)
-  studentToPlanId: number | null;
-  planId: number | null;
-  planName: string | null;
-  planDescription: string | null;
-  planMonthlyFee: number | null;
-  planIsActive: number | null;
-  enrolledAt: string | null;
+  // Plan enrollments
+  plans: StudentPlanEnrollment[];
 }
 
 export interface CreateStudentInput {

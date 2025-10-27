@@ -8,20 +8,19 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { Select } from "./ui/select";
-import { paymentsApi, studentsApi, plansApi } from "../lib/api";
-import type { StudentPayment } from "../types/payment";
+import { paymentsApi, studentsApi } from "../lib/api";
 import { Spinner } from "./ui/spinner";
+import type { StudentPlanEnrollment } from "@/types/student";
 
 interface PaymentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  payment?: StudentPayment;
-  preselectedStudentId?: number; // For pre-selecting student from detail page
-  planMonthlyFee?: number; // For pre-filling amount from plan
+  studentId: number;
+  studentPlans?: Array<StudentPlanEnrollment>;
 }
 
 const paymentSchema = z.object({
-  studentToPlanId: z.number().min(1, "Aluno/Plano é obrigatório"),
+  studentToPlanId: z.number().min(1, "Plano é obrigatório"),
   month: z.number().min(1).max(12, "Mês deve estar entre 1 e 12"),
   year: z.number().min(2020, "Ano inválido"),
   amount: z.number().min(0, "Valor deve ser maior ou igual a zero"),
@@ -34,41 +33,28 @@ const paymentSchema = z.object({
 export function PaymentForm({
   isOpen,
   onClose,
-  payment,
-  preselectedStudentId,
-  planMonthlyFee,
+  studentId,
+  studentPlans,
 }: PaymentFormProps) {
   const queryClient = useQueryClient();
-  const isEditMode = !!payment;
 
-  // Fetch students and plans for the dropdowns
-  const { data: students, isLoading: loadingStudents } = useQuery({
-    queryKey: ["students"],
-    queryFn: studentsApi.getAll,
-    enabled: isOpen,
-  });
-
-  // Load plans for future use (e.g., showing plan details in form)
-  const { data: _plans, isLoading: loadingPlans } = useQuery({
-    queryKey: ["plans"],
-    queryFn: plansApi.getAll,
+  // Fetch student's plan enrollments
+  const { data: student, isLoading: loadingStudent } = useQuery({
+    queryKey: ["student", String(studentId)],
+    queryFn: () => studentsApi.getById(studentId),
     enabled: isOpen,
   });
 
   const mutation = useMutation({
     mutationFn: (data: z.infer<typeof paymentSchema>) => {
-      if (isEditMode && payment) {
-        return paymentsApi.update(payment.id, data);
-      }
       return paymentsApi.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      toast.success(
-        isEditMode
-          ? "Pagamento atualizado com sucesso!"
-          : "Pagamento registrado com sucesso!"
-      );
+      queryClient.invalidateQueries({
+        queryKey: ["student-payments", String(studentId)],
+      });
+      toast.success("Pagamento registrado com sucesso!");
       onClose();
     },
     onError: (error: Error) => {
@@ -76,21 +62,42 @@ export function PaymentForm({
     },
   });
 
+  // Determine default values based on studentPlans
+  const hasOnlyOnePlan = studentPlans && studentPlans.length === 1;
+  const defaultEnrollmentId = hasOnlyOnePlan ? studentPlans[0].id : 0;
+  const defaultAmount = hasOnlyOnePlan
+    ? studentPlans[0].planMonthlyFee / 100
+    : 0;
+
   const form = useForm({
     defaultValues: {
-      studentToPlanId: payment?.studentToPlanId || preselectedStudentId || 0,
-      month: payment?.month || new Date().getMonth() + 1,
-      year: payment?.year || new Date().getFullYear(),
-      amount: payment?.amount || planMonthlyFee || 0,
-      paymentMethod: payment?.paymentMethod || "",
-      observations: payment?.observations || "",
+      studentToPlanId: defaultEnrollmentId,
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      amount: defaultAmount,
+      paymentMethod: "",
+      observations: "",
     },
     onSubmit: async ({ value }) => {
-      mutation.mutate(value as z.infer<typeof paymentSchema>);
+      // Convert amount back to cents before sending
+      const dataToSubmit = {
+        ...value,
+        amount: Math.round(value.amount * 100),
+      };
+      mutation.mutate(dataToSubmit as z.infer<typeof paymentSchema>);
     },
   });
 
-  if (loadingStudents || loadingPlans) {
+  // Update amount when enrollment selection changes
+  const handleEnrollmentChange = (enrollmentId: number) => {
+    form.setFieldValue("studentToPlanId", enrollmentId);
+    const enrollment = studentPlans?.find((p) => p.id === enrollmentId);
+    if (enrollment) {
+      form.setFieldValue("amount", enrollment.planMonthlyFee / 100);
+    }
+  };
+
+  if (loadingStudent) {
     return (
       <Modal open={isOpen} onOpenChange={onClose} title="Carregando...">
         <div className="flex justify-center items-center py-8">
@@ -104,7 +111,8 @@ export function PaymentForm({
     <Modal
       open={isOpen}
       onOpenChange={onClose}
-      title={isEditMode ? "Editar Pagamento" : "Registrar Novo Pagamento"}
+      title="Registrar Novo Pagamento"
+      description={student ? `Aluno: ${student.fullName}` : undefined}
     >
       <form
         onSubmit={(e) => {
@@ -122,21 +130,27 @@ export function PaymentForm({
         >
           {(field) => (
             <Select
-              label="Aluno"
+              label="Plano"
               name={field.name}
               value={field.state.value.toString()}
-              onChange={(e) =>
-                field.handleChange(parseInt(e.target.value) || 0)
-              }
+              onChange={(e) => {
+                const enrollmentId = parseInt(e.target.value) || 0;
+                handleEnrollmentChange(enrollmentId);
+              }}
               onBlur={field.handleBlur}
               error={field.state.meta.errors.join(", ")}
               required
-              disabled={isEditMode}
               options={[
-                { value: "0", label: "Selecione um aluno" },
-                ...(students?.map((student) => ({
-                  value: student.id.toString(),
-                  label: student.fullName,
+                { value: "0", label: "Selecione um plano" },
+                ...(studentPlans?.map((enrollment) => ({
+                  value: enrollment.id.toString(),
+                  label: `${enrollment.planName} - ${new Intl.NumberFormat(
+                    "pt-BR",
+                    {
+                      style: "currency",
+                      currency: "BRL",
+                    }
+                  ).format(enrollment.planMonthlyFee / 100)}`,
                 })) || []),
               ]}
             />
@@ -268,7 +282,7 @@ export function PaymentForm({
             variant="brand-pink"
             loading={mutation.isPending}
           >
-            {isEditMode ? "Atualizar" : "Registrar"}
+            Registrar
           </Button>
         </div>
       </form>

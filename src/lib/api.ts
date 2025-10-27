@@ -147,6 +147,42 @@ export const studentsApi = {
       throw new Error("Failed to delete student");
     }
   },
+
+  updatePlanEnrollment: async (
+    studentId: number,
+    enrollmentId: number,
+    planId: number
+  ): Promise<{ id: number; studentId: number; planId: number }> => {
+    const response = await fetch(
+      `${API_BASE}/students/${studentId}/plans/${enrollmentId}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ planId }),
+      }
+    );
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update plan enrollment");
+    }
+    return response.json();
+  },
+
+  createPlanEnrollment: async (
+    studentId: number,
+    planId: number
+  ): Promise<{ id: number; studentId: number; planId: number }> => {
+    const response = await fetch(`${API_BASE}/students/${studentId}/plans`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ planId }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create plan enrollment");
+    }
+    return response.json();
+  },
 };
 
 export const plansApi = {

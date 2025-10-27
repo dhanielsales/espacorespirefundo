@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { plansApi } from "../lib/api";
 import { Select } from "./ui/select";
-import type { SelectHTMLAttributes } from "react";
+import { useMemo, type SelectHTMLAttributes } from "react";
 
 interface SelectPlanProps
   extends Omit<
@@ -32,14 +32,17 @@ export function SelectPlan({
     queryFn: plansApi.getAll,
   });
 
-  const options =
-    plans?.map((plan) => ({
-      value: String(plan.id),
-      label: `${plan.name} - ${new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(plan.monthlyFee / 100)}`,
-    })) || [];
+  const options = useMemo(() => {
+    if (!plans) return [{ label: "Selecione um plano", value: "0" }];
+
+    return [
+      { label: "Selecione um plano", value: "0" },
+      ...plans.map((plan) => ({
+        label: plan.name,
+        value: String(plan.id),
+      })),
+    ];
+  }, [plans]);
 
   return (
     <Select

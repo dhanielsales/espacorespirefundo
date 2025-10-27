@@ -16,6 +16,7 @@ import {
   Trash2,
   Pencil,
   DollarSign,
+  Plus,
 } from "lucide-react";
 import { studentsApi } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
@@ -28,19 +29,11 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../../components/ui/alert-dialog";
 import { StudentForm } from "../../components/StudentForm";
 import { PaymentForm } from "../../components/PaymentForm";
+import { PlanEnrollmentForm } from "../../components/PlanEnrollmentForm";
+import { DeleteConfirmationAlert } from "../../components/DeleteConfirmationAlert";
+import type { StudentPlanEnrollment } from "../../types/student";
 
 export const Route = createFileRoute("/students/$id")({
   beforeLoad: ({ location }) => {
@@ -63,6 +56,10 @@ function StudentDetail() {
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<StudentPlanEnrollment | null>(
+    null
+  );
 
   const {
     data: student,
@@ -74,15 +71,11 @@ function StudentDetail() {
     queryFn: () => studentsApi.getById(parseInt(id, 10)),
   });
 
-  // Get student's payment history
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["student-payments", id],
     queryFn: () => studentsApi.getPayments(parseInt(id, 10)),
     enabled: !!student,
   });
-
-  // Get the plan's monthly fee from student data
-  const planMonthlyFee = student?.planMonthlyFee || 0;
 
   const deleteMutation = useMutation({
     mutationFn: studentsApi.delete,
@@ -163,38 +156,22 @@ function StudentDetail() {
                     <Pencil className="h-4 w-4" />
                     Editar
                   </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm" className="gap-2">
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Tem certeza absoluta?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá
-                          permanentemente os dados do aluno {student.fullName}{" "}
-                          do sistema.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDelete}
-                          disabled={deleteMutation.isPending}
-                          variant="destructive"
-                        >
-                          {deleteMutation.isPending
-                            ? "Excluindo..."
-                            : "Sim, excluir"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DeleteConfirmationAlert
+                    onConfirm={handleDelete}
+                    isPending={deleteMutation.isPending}
+                    description={
+                      <>
+                        Esta ação não pode ser desfeita. Isso excluirá
+                        permanentemente os dados do aluno{" "}
+                        <strong>{student.fullName}</strong> do sistema.
+                      </>
+                    }
+                  >
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Excluir
+                    </Button>
+                  </DeleteConfirmationAlert>
                 </div>
               </div>
             </CardHeader>
@@ -203,10 +180,26 @@ function StudentDetail() {
           {/* Contact Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Informações de Contato</CardTitle>
+              <CardTitle className="text-xl">Informações do Aluno</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-brand-violet-100 p-2">
+                    <User className="h-5 w-5 text-brand-violet-700" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500">Nome</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {student.fullName || (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="flex items-start gap-3">
                   <div className="rounded-lg bg-brand-violet-100 p-2">
                     <Mail className="h-5 w-5 text-brand-violet-700" />
@@ -343,60 +336,97 @@ function StudentDetail() {
             </CardContent>
           </Card>
 
-          {/* Plan Information */}
+          {/* Plan Enrollments */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Plano Atual</CardTitle>
-              {!student.planId && (
-                <CardDescription>
-                  Este aluno não está inscrito em nenhum plano
-                </CardDescription>
-              )}
-            </CardHeader>
-            {student.planId && (
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-500">
-                      Nome do Plano
-                    </p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {student.planName}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-500">
-                      Mensalidade
-                    </p>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format((student.planMonthlyFee || 0) / 100)}
-                    </p>
-                  </div>
-                  {student.planDescription && (
-                    <div className="space-y-2 md:col-span-2">
-                      <p className="text-sm font-medium text-gray-500">
-                        Descrição
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {student.planDescription}
-                      </p>
-                    </div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-xl">Planos Inscritos</CardTitle>
+                  {(!student.plans || student.plans.length === 0) && (
+                    <CardDescription>
+                      Este aluno não está inscrito em nenhum plano
+                    </CardDescription>
                   )}
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-500">
-                      Data de Inscrição
-                    </p>
-                    <p className="text-sm text-gray-900">
-                      {student.enrolledAt
-                        ? new Date(student.enrolledAt).toLocaleDateString(
-                            "pt-BR"
-                          )
-                        : "-"}
-                    </p>
-                  </div>
+                </div>
+                <Button
+                  variant="brand-pink"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setIsAddPlanModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Plano
+                </Button>
+              </div>
+            </CardHeader>
+            {student.plans && student.plans.length > 0 && (
+              <CardContent>
+                <div className="space-y-4">
+                  {student.plans.map((enrollment) => (
+                    <div
+                      key={enrollment.id}
+                      className="border rounded-lg p-4 hover:bg-gray-50"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {enrollment.planName}
+                            </h3>
+                            {enrollment.planIsActive === 1 ? (
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                                Ativo
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                Inativo
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            Inscrito em{" "}
+                            {new Date(enrollment.createdAt).toLocaleDateString(
+                              "pt-BR"
+                            )}
+                          </p>
+                        </div>
+                        <Button
+                          variant="brand-violet-outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setEditingPlan(enrollment)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-500">
+                            Mensalidade
+                          </p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(enrollment.planMonthlyFee / 100)}
+                          </p>
+                        </div>
+
+                        {enrollment.planDescription && (
+                          <div className="space-y-1 md:col-span-2">
+                            <p className="text-sm font-medium text-gray-500">
+                              Descrição
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {enrollment.planDescription}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             )}
@@ -497,14 +527,26 @@ function StudentDetail() {
             isOpen={isPaymentModalOpen}
             onClose={() => {
               setIsPaymentModalOpen(false);
-              // Refetch payments after closing to show updated list
               queryClient.invalidateQueries({
                 queryKey: ["student-payments", id],
               });
             }}
-            preselectedStudentId={student.studentToPlanId ?? undefined}
-            planMonthlyFee={planMonthlyFee}
+            studentId={student.id}
+            studentPlans={student.plans}
           />
+          <PlanEnrollmentForm
+            open={isAddPlanModalOpen}
+            onClose={() => setIsAddPlanModalOpen(false)}
+            studentId={student.id}
+          />
+          {editingPlan && (
+            <PlanEnrollmentForm
+              open={true}
+              onClose={() => setEditingPlan(null)}
+              studentId={student.id}
+              enrollment={editingPlan}
+            />
+          )}
         </>
       )}
     </div>

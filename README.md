@@ -190,3 +190,11 @@ All API endpoints are available under `/api`:
 #FFBADC Light pink
 #FFFFFF White
 #0d0d16 Black (Not pure)
+
+## TODO
+
+- Adicionar date picker
+- Dashboard
+- Fazer busca por nome do aluno e debounce
+- Fazer filtros e busca por planos
+- Fazer paginacao das rotas de listagem

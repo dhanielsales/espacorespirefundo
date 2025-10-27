@@ -68,28 +68,33 @@ fastify.post("/api/students", async (request, reply) => {
 
     const { planId, ...studentData } = validation.data;
 
-    // Create student
-    const newStudent = await db
-      .insert(students)
-      .values(studentData)
-      .returning();
+    // Create student and enrollment in a transaction
+    const result = await db.transaction(async (tx) => {
+      // Create student
+      const newStudent = await tx
+        .insert(students)
+        .values(studentData)
+        .returning();
 
-    const student = newStudent[0];
+      const student = newStudent[0];
 
-    // Enroll student in plan
-    await db.insert(studentsToPlans).values({
-      studentId: student.id,
-      planId: planId,
+      // Enroll student in plan
+      await tx.insert(studentsToPlans).values({
+        studentId: student.id,
+        planId: planId,
+      });
+
+      return student;
     });
 
-    return reply.code(201).send(student);
+    return reply.code(201).send(result);
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to create student" });
   }
 });
 
-// GET /api/students/:id - Get a single student with plan info
+// GET /api/students/:id - Get a single student with their plan enrollments
 fastify.get("/api/students/:id", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
@@ -99,39 +104,39 @@ fastify.get("/api/students/:id", async (request, reply) => {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
-    const result = await db
+    // Get student data
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.id, studentId))
+      .limit(1);
+
+    if (!student) {
+      return reply.code(404).send({ error: "Student not found" });
+    }
+
+    // Get student's plan enrollments
+    const studentPlans = await db
       .select({
-        id: students.id,
-        fullName: students.fullName,
-        email: students.email,
-        phone: students.phone,
-        birthDate: students.birthDate,
-        parentName: students.parentName,
-        parentEmail: students.parentEmail,
-        parentPhone: students.parentPhone,
-        observations: students.observations,
-        createdAt: students.createdAt,
-        updatedAt: students.updatedAt,
-        studentToPlanId: studentsToPlans.id,
+        id: studentsToPlans.id,
         planId: plans.id,
         planName: plans.name,
         planDescription: plans.description,
         planMonthlyFee: plans.monthlyFee,
         planIsActive: plans.isActive,
-        enrolledAt: studentsToPlans.enrolledAt,
+        enrollmentIsActive: studentsToPlans.isActive,
+        createdAt: studentsToPlans.createdAt,
+        updatedAt: studentsToPlans.updatedAt,
       })
-      .from(students)
-      .leftJoin(studentsToPlans, eq(students.id, studentsToPlans.studentId))
-      .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .where(eq(students.id, studentId))
-      .orderBy(desc(studentsToPlans.enrolledAt))
-      .limit(1);
+      .from(studentsToPlans)
+      .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
+      .where(eq(studentsToPlans.studentId, studentId))
+      .orderBy(desc(studentsToPlans.createdAt));
 
-    if (result.length === 0) {
-      return reply.code(404).send({ error: "Student not found" });
-    }
-
-    return reply.code(200).send(result[0]);
+    return reply.code(200).send({
+      ...student,
+      plans: studentPlans,
+    });
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to fetch student" });
@@ -176,6 +181,145 @@ fastify.get("/api/students/:id/payments", async (request, reply) => {
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to fetch student payments" });
+  }
+});
+
+// GET /api/students/:id/plans - Get student's enrolled plans
+fastify.get("/api/students/:id/plans", async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const studentId = parseInt(id, 10);
+
+    if (isNaN(studentId)) {
+      return reply.code(400).send({ error: "Invalid student ID" });
+    }
+
+    const studentPlans = await db
+      .select({
+        id: studentsToPlans.id,
+        studentId: studentsToPlans.studentId,
+        planId: studentsToPlans.planId,
+        planName: plans.name,
+        planDescription: plans.description,
+        monthlyFee: plans.monthlyFee,
+        isActive: plans.isActive,
+        createdAt: studentsToPlans.createdAt,
+      })
+      .from(studentsToPlans)
+      .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
+      .where(eq(studentsToPlans.studentId, studentId))
+      .orderBy(desc(studentsToPlans.createdAt));
+
+    return reply.code(200).send(studentPlans);
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.code(500).send({ error: "Failed to fetch student plans" });
+  }
+});
+
+// POST /api/students/:id/plans - Create a new plan enrollment for student
+fastify.post("/api/students/:id/plans", async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const studentId = parseInt(id, 10);
+
+    if (isNaN(studentId)) {
+      return reply.code(400).send({ error: "Invalid student ID" });
+    }
+
+    const body = request.body as { planId?: number };
+
+    if (!body.planId) {
+      return reply.code(400).send({ error: "planId is required" });
+    }
+
+    // Verify student exists
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.id, studentId))
+      .limit(1);
+
+    if (!student) {
+      return reply.code(404).send({ error: "Student not found" });
+    }
+
+    // Verify plan exists
+    const [plan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, body.planId))
+      .limit(1);
+
+    if (!plan) {
+      return reply.code(404).send({ error: "Plan not found" });
+    }
+
+    // Create the enrollment
+    const [newEnrollment] = await db
+      .insert(studentsToPlans)
+      .values({
+        studentId: studentId,
+        planId: body.planId,
+      })
+      .returning();
+
+    return reply.code(201).send(newEnrollment);
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.code(500).send({ error: "Failed to create plan enrollment" });
+  }
+});
+
+// PUT /api/students/:id/plans/:enrollmentId - Update student plan enrollment
+fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
+  try {
+    const { id, enrollmentId } = request.params as {
+      id: string;
+      enrollmentId: string;
+    };
+    const studentId = parseInt(id, 10);
+    const enrollmentIdNum = parseInt(enrollmentId, 10);
+
+    if (isNaN(studentId) || isNaN(enrollmentIdNum)) {
+      return reply.code(400).send({ error: "Invalid ID" });
+    }
+
+    const body = request.body as { planId?: number };
+
+    if (!body.planId) {
+      return reply.code(400).send({ error: "planId is required" });
+    }
+
+    // Verify the enrollment belongs to the student
+    const existingEnrollment = await db
+      .select()
+      .from(studentsToPlans)
+      .where(eq(studentsToPlans.id, enrollmentIdNum));
+
+    if (existingEnrollment.length === 0) {
+      return reply.code(404).send({ error: "Enrollment not found" });
+    }
+
+    if (existingEnrollment[0].studentId !== studentId) {
+      return reply
+        .code(403)
+        .send({ error: "Enrollment does not belong to this student" });
+    }
+
+    // Update the enrollment
+    const updated = await db
+      .update(studentsToPlans)
+      .set({ planId: body.planId })
+      .where(eq(studentsToPlans.id, enrollmentIdNum))
+      .returning();
+
+    return reply.code(200).send(updated[0]);
+  } catch (error) {
+    fastify.log.error(error);
+    return reply
+      .code(500)
+      .send({ error: "Failed to update student plan enrollment" });
   }
 });
 
@@ -472,11 +616,25 @@ fastify.post("/api/payments", async (request, reply) => {
   }
 
   try {
+    // Get the planId from studentsToPlans
+    const [enrollment] = await db
+      .select({ planId: studentsToPlans.planId })
+      .from(studentsToPlans)
+      .where(eq(studentsToPlans.id, body.studentToPlanId))
+      .limit(1);
+
+    if (!enrollment) {
+      return reply
+        .code(404)
+        .send({ error: "Student plan enrollment not found" });
+    }
+
     const [newPayment] = await db
       .insert(studentPayments)
       .values({
         studentToPlanId: body.studentToPlanId,
         month: body.month,
+        planId: enrollment.planId, // Auto-fill from studentsToPlans
         year: body.year,
         amount: body.amount,
         paymentMethod: body.paymentMethod || null,

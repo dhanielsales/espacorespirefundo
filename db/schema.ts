@@ -61,7 +61,9 @@ export const studentsToPlans = pgTable("students_to_plans", {
   planId: integer("plan_id")
     .notNull()
     .references(() => plans.id, { onDelete: "cascade" }),
-  enrolledAt: timestamp("enrolled_at").defaultNow().notNull(),
+  isActive: integer("is_active").notNull().default(1), // 1 = active, 0 = inactive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Student payments table
@@ -70,6 +72,9 @@ export const studentPayments = pgTable("student_payments", {
   studentToPlanId: integer("student_to_plan_id")
     .notNull()
     .references(() => studentsToPlans.id, { onDelete: "cascade" }),
+  planId: integer("plan_id")
+    .notNull()
+    .references(() => plans.id, { onDelete: "cascade" }),
   month: integer("month").notNull(), // 1-12
   year: integer("year").notNull(),
   amount: integer("amount").notNull(), // Payment amount in cents
@@ -109,6 +114,10 @@ export const studentPaymentsRelations = relations(
     studentToPlan: one(studentsToPlans, {
       fields: [studentPayments.studentToPlanId],
       references: [studentsToPlans.id],
+    }),
+    plan: one(plans, {
+      fields: [studentPayments.planId],
+      references: [plans.id],
     }),
   })
 );
