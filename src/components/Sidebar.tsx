@@ -17,14 +17,14 @@ const items = [
         icon: Users,
       },
       {
-        label: "Pagamentos",
-        to: "/payments",
-        icon: DollarSign,
-      },
-      {
         label: "Planos",
         to: "/plans",
         icon: BarChart3,
+      },
+      {
+        label: "Pagamentos",
+        to: "/payments",
+        icon: DollarSign,
       },
     ],
   },

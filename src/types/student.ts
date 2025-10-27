@@ -10,6 +10,14 @@ export interface Student {
   observations: string | null;
   createdAt: string;
   updatedAt: string;
+  // Plan information (from JOIN)
+  studentToPlanId: number | null;
+  planId: number | null;
+  planName: string | null;
+  planDescription: string | null;
+  planMonthlyFee: number | null;
+  planIsActive: number | null;
+  enrolledAt: string | null;
 }
 
 export interface CreateStudentInput {

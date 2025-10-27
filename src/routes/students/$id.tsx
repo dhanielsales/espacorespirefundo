@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Trash2,
   Pencil,
+  DollarSign,
 } from "lucide-react";
 import { studentsApi } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
@@ -39,6 +40,7 @@ import {
   AlertDialogTrigger,
 } from "../../components/ui/alert-dialog";
 import { StudentForm } from "../../components/StudentForm";
+import { PaymentForm } from "../../components/PaymentForm";
 
 export const Route = createFileRoute("/students/$id")({
   beforeLoad: ({ location }) => {
@@ -60,6 +62,7 @@ function StudentDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const {
     data: student,
@@ -71,12 +74,22 @@ function StudentDetail() {
     queryFn: () => studentsApi.getById(parseInt(id, 10)),
   });
 
+  // Get student's payment history
+  const { data: payments, isLoading: paymentsLoading } = useQuery({
+    queryKey: ["student-payments", id],
+    queryFn: () => studentsApi.getPayments(parseInt(id, 10)),
+    enabled: !!student,
+  });
+
+  // Get the plan's monthly fee from student data
+  const planMonthlyFee = student?.planMonthlyFee || 0;
+
   const deleteMutation = useMutation({
     mutationFn: studentsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
       toast.success("Student deleted successfully!");
-      navigate({ to: "/" });
+      navigate({ to: "/students" });
     },
     onError: (error) => {
       toast.error(error.message || "Failed to delete student");
@@ -110,7 +123,7 @@ function StudentDetail() {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="py-6">
             <p className="text-red-600">
-              Error loading student: {error.message}
+              Erro Carregando os dados do aluno: {error.message}
             </p>
           </CardContent>
         </Card>
@@ -133,7 +146,16 @@ function StudentDetail() {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    variant="brand-violet-light"
+                    variant="brand-violet-outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Registrar Pagamento
+                  </Button>
+                  <Button
+                    variant="brand-violet-outline"
                     size="sm"
                     className="gap-2"
                     onClick={() => setIsEditModalOpen(true)}
@@ -259,7 +281,11 @@ function StudentDetail() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500">Nome</p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {student.parentName || "-"}
+                      {student.parentName || (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -271,7 +297,11 @@ function StudentDetail() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500">Email</p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {student.parentEmail || "-"}
+                      {student.parentEmail || (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -285,7 +315,11 @@ function StudentDetail() {
                       Telefone
                     </p>
                     <p className="mt-1 text-sm text-gray-900">
-                      {student.parentPhone || "-"}
+                      {student.parentPhone || (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -306,6 +340,126 @@ function StudentDetail() {
                   </span>
                 )}
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Plan Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Plano Atual</CardTitle>
+              {!student.planId && (
+                <CardDescription>
+                  Este aluno não está inscrito em nenhum plano
+                </CardDescription>
+              )}
+            </CardHeader>
+            {student.planId && (
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-500">
+                      Nome do Plano
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {student.planName}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-500">
+                      Mensalidade
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format((student.planMonthlyFee || 0) / 100)}
+                    </p>
+                  </div>
+                  {student.planDescription && (
+                    <div className="space-y-2 md:col-span-2">
+                      <p className="text-sm font-medium text-gray-500">
+                        Descrição
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {student.planDescription}
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-500">
+                      Data de Inscrição
+                    </p>
+                    <p className="text-sm text-gray-900">
+                      {student.enrolledAt
+                        ? new Date(student.enrolledAt).toLocaleDateString(
+                            "pt-BR"
+                          )
+                        : "-"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Payment History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Histórico de Pagamentos</CardTitle>
+              <CardDescription>
+                {payments?.length || 0} pagamento(s) registrado(s)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {paymentsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner size="md" />
+                </div>
+              ) : payments && payments.length > 0 ? (
+                <div className="space-y-3">
+                  {payments.map((payment) => (
+                    <div
+                      key={payment.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">
+                            {payment.month}/{payment.year}
+                          </p>
+                          {payment.paidAt && (
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                              Pago
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {payment.planName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          {new Intl.NumberFormat("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }).format(payment.amount / 100)}
+                        </p>
+                        {payment.paidAt && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(payment.paidAt).toLocaleDateString(
+                              "pt-BR"
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic py-4">
+                  Nenhum pagamento registrado
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -332,12 +486,26 @@ function StudentDetail() {
 
       {/* Edit Modal */}
       {student && (
-        <StudentForm
-          open={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          student={student}
-          onSuccess={() => refetch()}
-        />
+        <>
+          <StudentForm
+            open={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            student={student}
+            onSuccess={() => refetch()}
+          />
+          <PaymentForm
+            isOpen={isPaymentModalOpen}
+            onClose={() => {
+              setIsPaymentModalOpen(false);
+              // Refetch payments after closing to show updated list
+              queryClient.invalidateQueries({
+                queryKey: ["student-payments", id],
+              });
+            }}
+            preselectedStudentId={student.studentToPlanId ?? undefined}
+            planMonthlyFee={planMonthlyFee}
+          />
+        </>
       )}
     </div>
   );

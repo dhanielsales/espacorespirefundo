@@ -3,15 +3,21 @@ import type {
   CreateStudentInput,
   UpdateStudentInput,
 } from "../types/student";
+import type { Plan, CreatePlanInput, UpdatePlanInput } from "../types/plan";
+import type {
+  StudentPayment,
+  CreatePaymentInput,
+  UpdatePaymentInput,
+} from "../types/payment";
 import type { LoginInput, RegisterInput } from "../../db/validations";
 import { useAuthStore } from "../store/auth";
 
 const API_BASE = "/api";
 
-function getAuthHeaders(): HeadersInit {
+function getAuthHeaders(includeContentType = true): HeadersInit {
   const token = useAuthStore.getState().token;
   return {
-    "Content-Type": "application/json",
+    ...(includeContentType ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -96,6 +102,16 @@ export const studentsApi = {
     return response.json();
   },
 
+  getPayments: async (id: number): Promise<StudentPayment[]> => {
+    const response = await fetch(`${API_BASE}/students/${id}/payments`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch student payments");
+    }
+    return response.json();
+  },
+
   create: async (data: CreateStudentInput): Promise<Student> => {
     const response = await fetch(`${API_BASE}/students`, {
       method: "POST",
@@ -125,10 +141,129 @@ export const studentsApi = {
   delete: async (id: number): Promise<void> => {
     const response = await fetch(`${API_BASE}/students/${id}`, {
       method: "DELETE",
-      headers: getAuthHeaders(),
+      headers: getAuthHeaders(false),
     });
     if (!response.ok) {
       throw new Error("Failed to delete student");
+    }
+  },
+};
+
+export const plansApi = {
+  getAll: async (): Promise<Plan[]> => {
+    const response = await fetch(`${API_BASE}/plans`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch plans");
+    }
+    return response.json();
+  },
+
+  getById: async (id: number): Promise<Plan> => {
+    const response = await fetch(`${API_BASE}/plans/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch plan");
+    }
+    return response.json();
+  },
+
+  create: async (data: CreatePlanInput): Promise<Plan> => {
+    const response = await fetch(`${API_BASE}/plans`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create plan");
+    }
+    return response.json();
+  },
+
+  update: async (id: number, data: UpdatePlanInput): Promise<Plan> => {
+    const response = await fetch(`${API_BASE}/plans/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update plan");
+    }
+    return response.json();
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const response = await fetch(`${API_BASE}/plans/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(false),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to delete plan");
+    }
+  },
+};
+
+export const paymentsApi = {
+  getAll: async (): Promise<StudentPayment[]> => {
+    const response = await fetch(`${API_BASE}/payments`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch payments");
+    }
+    return response.json();
+  },
+
+  getById: async (id: number): Promise<StudentPayment> => {
+    const response = await fetch(`${API_BASE}/payments/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch payment");
+    }
+    return response.json();
+  },
+
+  create: async (data: CreatePaymentInput): Promise<StudentPayment> => {
+    const response = await fetch(`${API_BASE}/payments`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create payment");
+    }
+    return response.json();
+  },
+
+  update: async (
+    id: number,
+    data: UpdatePaymentInput
+  ): Promise<StudentPayment> => {
+    const response = await fetch(`${API_BASE}/payments/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update payment");
+    }
+    return response.json();
+  },
+
+  delete: async (id: number): Promise<void> => {
+    const response = await fetch(`${API_BASE}/payments/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(false),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to delete payment");
     }
   },
 };

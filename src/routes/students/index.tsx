@@ -132,19 +132,13 @@ function StudentsPage() {
           </Button>
         </div>
 
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Students</h2>
-          </div>
-
-          <div className="px-6 py-4">
-            <DataTable
-              columns={columns}
-              data={students || []}
-              loading={isLoading}
-              error={error}
-            />
-          </div>
+        <div className="bg-white shadow rounded-lg overflow-hidden p-4">
+          <DataTable
+            columns={columns}
+            data={students || []}
+            loading={isLoading}
+            error={error}
+          />
         </div>
       </div>
     </>

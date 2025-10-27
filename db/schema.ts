@@ -49,6 +49,7 @@ export const plans = pgTable("plans", {
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
   monthlyFee: integer("monthly_fee").notNull(), // Store in cents
+  isActive: integer("is_active").notNull().default(1), // 1 = active, 0 = inactive
 });
 
 // Students to plans junction table
@@ -71,6 +72,7 @@ export const studentPayments = pgTable("student_payments", {
     .references(() => studentsToPlans.id, { onDelete: "cascade" }),
   month: integer("month").notNull(), // 1-12
   year: integer("year").notNull(),
+  amount: integer("amount").notNull(), // Payment amount in cents
   paymentMethod: paymentMethodEnum("payment_method"),
   paidAt: timestamp("paid_at"),
   observations: text("observations"),
