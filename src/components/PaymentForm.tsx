@@ -1,7 +1,8 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import toast from "react-hot-toast";
+import { useEffect, useState } from "react";
 
 import { Modal } from "./ui/modal";
 import { Input } from "./ui/input";
@@ -10,7 +11,18 @@ import { Button } from "./ui/button";
 import { Select } from "./ui/select";
 import { paymentsApi, studentsApi } from "../lib/api";
 import { Spinner } from "./ui/spinner";
-import type { StudentPlanEnrollment } from "@/types/student";
+import type { Plan, StudentPlanEnrollment } from "@/types/student";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
+import { PaymentReceiptModal } from "./PaymentReceiptModal";
 
 interface PaymentFormProps {
   isOpen: boolean;
@@ -37,6 +49,17 @@ export function PaymentForm({
   studentPlans,
 }: PaymentFormProps) {
   const queryClient = useQueryClient();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [plan, setPlan] = useState<string>();
+  const [createdPayment, setCreatedPayment] = useState<{
+    amount: number;
+    month: number;
+    year: number;
+    paymentMethod?: string;
+    paidAt?: string;
+    id?: number;
+  } | null>(null);
 
   // Fetch student's plan enrollments
   const { data: student, isLoading: loadingStudent } = useQuery({
@@ -49,13 +72,25 @@ export function PaymentForm({
     mutationFn: (data: z.infer<typeof paymentSchema>) => {
       return paymentsApi.create(data);
     },
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({
         queryKey: ["student-payments", String(studentId)],
       });
       toast.success("Pagamento registrado com sucesso!");
-      onClose();
+
+      // Store payment data for receipt
+      setCreatedPayment({
+        amount: variables.amount,
+        month: variables.month,
+        year: variables.year,
+        paymentMethod: variables.paymentMethod,
+        paidAt: new Date().toISOString(),
+        id: response?.id,
+      });
+
+      // Show receipt modal
+      setShowReceipt(true);
     },
     onError: (error: Error) => {
       toast.error(`Erro ao salvar pagamento: ${error.message}`);
@@ -69,6 +104,12 @@ export function PaymentForm({
     ? studentPlans[0].planMonthlyFee / 100
     : 0;
 
+  useEffect(() => {
+    if (hasOnlyOnePlan) {
+      setPlan(studentPlans![0].planName);
+    }
+  }, [hasOnlyOnePlan, studentPlans]);
+
   const form = useForm({
     defaultValues: {
       studentToPlanId: defaultEnrollmentId,
@@ -79,14 +120,22 @@ export function PaymentForm({
       observations: "",
     },
     onSubmit: async ({ value }) => {
-      // Convert amount back to cents before sending
-      const dataToSubmit = {
-        ...value,
-        amount: Math.round(value.amount * 100),
-      };
-      mutation.mutate(dataToSubmit as z.infer<typeof paymentSchema>);
+      // Show confirmation dialog instead of submitting directly
+      setShowConfirmation(true);
+      // Store form values temporarily
+      form.state.values = value;
     },
   });
+
+  const handleConfirmSubmit = () => {
+    // Convert amount back to cents before sending
+    const dataToSubmit = {
+      ...form.state.values,
+      amount: Math.round(form.state.values.amount * 100),
+    };
+    mutation.mutate(dataToSubmit as z.infer<typeof paymentSchema>);
+    setShowConfirmation(false);
+  };
 
   // Update amount when enrollment selection changes
   const handleEnrollmentChange = (enrollmentId: number) => {
@@ -94,6 +143,7 @@ export function PaymentForm({
     const enrollment = studentPlans?.find((p) => p.id === enrollmentId);
     if (enrollment) {
       form.setFieldValue("amount", enrollment.planMonthlyFee / 100);
+      setPlan(enrollment.planName);
     }
   };
 
@@ -243,6 +293,7 @@ export function PaymentForm({
           {(field) => (
             <Select
               label="Método de Pagamento"
+              required
               name={field.name}
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
@@ -286,6 +337,62 @@ export function PaymentForm({
           </Button>
         </div>
       </form>
+
+      {/* Confirmation Alert Dialog */}
+      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Pagamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a registrar um pagamento de{" "}
+              <strong>
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(form.state.values.amount)}
+              </strong>{" "}
+              para o aluno <strong>{student?.fullName}</strong> no plano{" "}
+              <strong>{plan}</strong>.
+              <br />
+              <br />
+              Deseja confirmar esta ação?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSubmit}
+              className="bg-brand-pink-700 hover:bg-brand-pink-700/90"
+            >
+              Confirmar Pagamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Receipt Modal */}
+      {createdPayment && student && (
+        <PaymentReceiptModal
+          isOpen={showReceipt}
+          onClose={() => {
+            setShowReceipt(false);
+            setCreatedPayment(null);
+            onClose();
+          }}
+          studentName={student.fullName}
+          planName={
+            studentPlans?.find(
+              (p) => p.id === form.state.values.studentToPlanId
+            )?.planName || "N/A"
+          }
+          amount={createdPayment.amount}
+          month={createdPayment.month}
+          year={createdPayment.year}
+          paymentMethod={createdPayment.paymentMethod}
+          paidAt={createdPayment.paidAt}
+          receiptNumber={createdPayment.id?.toString()}
+        />
+      )}
     </Modal>
   );
 }

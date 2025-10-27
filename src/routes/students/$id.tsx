@@ -17,6 +17,7 @@ import {
   Pencil,
   DollarSign,
   Plus,
+  FileText,
 } from "lucide-react";
 import { studentsApi } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
@@ -33,7 +34,9 @@ import { StudentForm } from "../../components/StudentForm";
 import { PaymentForm } from "../../components/PaymentForm";
 import { PlanEnrollmentForm } from "../../components/PlanEnrollmentForm";
 import { DeleteConfirmationAlert } from "../../components/DeleteConfirmationAlert";
+import { PaymentReceiptModal } from "../../components/PaymentReceiptModal";
 import type { StudentPlanEnrollment } from "../../types/student";
+import type { StudentPayment } from "../../types/payment";
 
 export const Route = createFileRoute("/students/$id")({
   beforeLoad: ({ location }) => {
@@ -60,6 +63,8 @@ function StudentDetail() {
   const [editingPlan, setEditingPlan] = useState<StudentPlanEnrollment | null>(
     null
   );
+  const [selectedPaymentForReceipt, setSelectedPaymentForReceipt] =
+    useState<StudentPayment | null>(null);
 
   const {
     data: student,
@@ -467,20 +472,34 @@ function StudentDetail() {
                           {payment.planName}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">
-                          {new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(payment.amount / 100)}
-                        </p>
-                        {payment.paidAt && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(payment.paidAt).toLocaleDateString(
-                              "pt-BR"
-                            )}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">
+                            {new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(payment.amount / 100)}
                           </p>
-                        )}
+                          {payment.paidAt && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(payment.paidAt).toLocaleDateString(
+                                "pt-BR",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="brand-violet-outline"
+                          className="gap-2"
+                          onClick={() => setSelectedPaymentForReceipt(payment)}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Ver Recibo
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -545,6 +564,22 @@ function StudentDetail() {
               onClose={() => setEditingPlan(null)}
               studentId={student.id}
               enrollment={editingPlan}
+            />
+          )}
+          {selectedPaymentForReceipt && (
+            <PaymentReceiptModal
+              isOpen={true}
+              onClose={() => setSelectedPaymentForReceipt(null)}
+              studentName={student.fullName}
+              planName={selectedPaymentForReceipt.planName || "N/A"}
+              amount={selectedPaymentForReceipt.amount}
+              month={selectedPaymentForReceipt.month}
+              year={selectedPaymentForReceipt.year}
+              paymentMethod={
+                selectedPaymentForReceipt.paymentMethod || undefined
+              }
+              paidAt={selectedPaymentForReceipt.paidAt || undefined}
+              receiptNumber={selectedPaymentForReceipt.id.toString()}
             />
           )}
         </>

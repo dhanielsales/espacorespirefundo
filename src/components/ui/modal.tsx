@@ -10,7 +10,7 @@ interface ModalProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
   isLoading?: boolean;
 }
 
@@ -19,6 +19,7 @@ const sizeClasses = {
   md: "max-w-md",
   lg: "max-w-lg",
   xl: "max-w-xl",
+  "2xl": "max-w-2xl",
 };
 
 export function Modal({
@@ -52,7 +53,7 @@ export function Modal({
             </Dialog.Description>
           )}
 
-          <div className="max-h-[70vh] overflow-y-auto px-1 -mx-1">
+          <div className="max-h-[80vh] overflow-y-auto px-1 -mx-1">
             {isLoading ? (
               <div className="flex justify-center items-center py-48">
                 <Spinner />
