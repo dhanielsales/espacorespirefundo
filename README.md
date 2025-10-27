@@ -193,8 +193,4 @@ All API endpoints are available under `/api`:
 
 ## TODO
 
-- Adicionar date picker
-- Dashboard
-- Fazer busca por nome do aluno e debounce
-- Fazer filtros e busca por planos
-- Fazer paginacao das rotas de listagem
+- Adicionar date picker ???
