@@ -11,6 +11,7 @@ import { studentsApi } from "../../lib/api";
 import { StudentForm } from "../../components/StudentForm";
 import { useAuthStore } from "../../store/auth";
 import { formatCPF } from "../../lib/formatters";
+import { useDebounce } from "../../hooks/useDebounce";
 import { DataTable } from "../../components/ui/data-table";
 import { RowActions } from "../../components/ui/row-actions";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -38,6 +39,7 @@ function StudentsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const navigate = useNavigate();
 
   const {
@@ -45,8 +47,8 @@ function StudentsPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["students", page, limit, search],
-    queryFn: () => studentsApi.getAll({ page, limit, search }),
+    queryKey: ["students", page, limit, debouncedSearch],
+    queryFn: () => studentsApi.getAll({ page, limit, search: debouncedSearch }),
   });
 
   const students = response?.data || [];

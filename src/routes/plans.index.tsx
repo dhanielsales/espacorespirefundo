@@ -9,6 +9,7 @@ import { Badge } from "../components/ui/badge";
 import { RowActions } from "../components/ui/row-actions";
 import { PlanForm } from "../components/PlanForm";
 import { plansApi } from "../lib/api";
+import { useDebounce } from "../hooks/useDebounce";
 import type { Plan } from "../types/plan";
 
 export const Route = createFileRoute("/plans/")({
@@ -21,14 +22,15 @@ function PlansPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
   const {
     data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["plans", page, limit, search],
-    queryFn: () => plansApi.getAll({ page, limit, search }),
+    queryKey: ["plans", page, limit, debouncedSearch],
+    queryFn: () => plansApi.getAll({ page, limit, search: debouncedSearch }),
   });
 
   const plans = response?.data || [];

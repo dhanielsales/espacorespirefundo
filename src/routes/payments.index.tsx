@@ -10,6 +10,7 @@ import { Input } from "../components/ui/input";
 import { PaymentReceiptModal } from "../components/PaymentReceiptModal";
 import { SelectPlan } from "../components/SelectPlan";
 import { paymentsApi } from "../lib/api";
+import { useDebounce } from "../hooks/useDebounce";
 import type { StudentPayment } from "../types/payment";
 
 export const Route = createFileRoute("/payments/")({
@@ -31,18 +32,19 @@ function PaymentsPage() {
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [planId, setPlanId] = useState("0");
+  const debouncedSearch = useDebounce(search, 500);
 
   const {
     data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["payments", page, limit, search, planId],
+    queryKey: ["payments", page, limit, debouncedSearch, planId],
     queryFn: () =>
       paymentsApi.getAll({
         page,
         limit,
-        search,
+        search: debouncedSearch,
         planId: planId === "0" ? undefined : planId,
       }),
   });
