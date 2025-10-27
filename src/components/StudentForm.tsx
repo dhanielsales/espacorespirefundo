@@ -68,7 +68,7 @@ export function StudentForm({
       parentEmail: student?.parentEmail || "",
       parentPhone: student?.parentPhone || "",
       observations: student?.observations || "",
-      planId: 0 as number,
+      planId: "",
     },
     onSubmit: async ({ value }) => {
       mutation.mutate(value as CreateStudentInput);
@@ -161,7 +161,7 @@ export function StudentForm({
                 name="planId"
                 validators={{
                   onChange: ({ value }) => {
-                    if (value === null || value === undefined || value === 0) {
+                    if (value === null || value === undefined || value === "") {
                       return "Plano é obrigatório";
                     }
 
@@ -176,7 +176,7 @@ export function StudentForm({
                 {(field) => (
                   <SelectPlan
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                    onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     error={field.state.meta.errors.join(", ")}
                     required

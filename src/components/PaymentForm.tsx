@@ -1,4 +1,4 @@
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import toast from "react-hot-toast";
@@ -11,7 +11,7 @@ import { Button } from "./ui/button";
 import { Select } from "./ui/select";
 import { paymentsApi, studentsApi } from "../lib/api";
 import { Spinner } from "./ui/spinner";
-import type { Plan, StudentPlanEnrollment } from "@/types/student";
+import type { StudentPlanEnrollment } from "@/types/student";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +27,12 @@ import { PaymentReceiptModal } from "./PaymentReceiptModal";
 interface PaymentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  studentId: number;
+  studentId: string;
   studentPlans?: Array<StudentPlanEnrollment>;
 }
 
 const paymentSchema = z.object({
-  studentToPlanId: z.number().min(1, "Plano é obrigatório"),
+  studentToPlanId: z.uuid().min(1, "Plano é obrigatório"),
   month: z.number().min(1).max(12, "Mês deve estar entre 1 e 12"),
   year: z.number().min(2020, "Ano inválido"),
   amount: z.number().min(0, "Valor deve ser maior ou igual a zero"),
@@ -58,7 +58,7 @@ export function PaymentForm({
     year: number;
     paymentMethod?: string;
     paidAt?: string;
-    id?: number;
+    id?: string;
   } | null>(null);
 
   // Fetch student's plan enrollments
@@ -138,7 +138,7 @@ export function PaymentForm({
   };
 
   // Update amount when enrollment selection changes
-  const handleEnrollmentChange = (enrollmentId: number) => {
+  const handleEnrollmentChange = (enrollmentId: string) => {
     form.setFieldValue("studentToPlanId", enrollmentId);
     const enrollment = studentPlans?.find((p) => p.id === enrollmentId);
     if (enrollment) {
@@ -184,7 +184,7 @@ export function PaymentForm({
               name={field.name}
               value={field.state.value.toString()}
               onChange={(e) => {
-                const enrollmentId = parseInt(e.target.value) || 0;
+                const enrollmentId = e.target.value;
                 handleEnrollmentChange(enrollmentId);
               }}
               onBlur={field.handleBlur}

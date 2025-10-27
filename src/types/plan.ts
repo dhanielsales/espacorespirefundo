@@ -1,5 +1,5 @@
 export interface Plan {
-  id: number;
+  id: string; // UUID
   name: string;
   description: string | null;
   monthlyFee: number;

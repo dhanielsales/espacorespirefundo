@@ -1,6 +1,6 @@
 export interface StudentPlanEnrollment {
-  id: number; // studentToPlanId
-  planId: number;
+  id: string; // studentToPlanId (UUID)
+  planId: string;
   planName: string;
   planDescription: string | null;
   planMonthlyFee: number;
@@ -11,7 +11,7 @@ export interface StudentPlanEnrollment {
 }
 
 export interface Student {
-  id: number;
+  id: string; // UUID
   fullName: string;
   email: string | null;
   phone: string | null;
@@ -35,7 +35,7 @@ export interface CreateStudentInput {
   parentEmail?: string;
   parentPhone?: string;
   observations?: string;
-  planId: number;
+  planId: string; // UUID
 }
 
 export interface UpdateStudentInput {

@@ -6,7 +6,7 @@ const JWT_SECRET =
 const JWT_EXPIRES_IN = "7d";
 
 export interface JWTPayload {
-  userId: number;
+  userId: string;
   name: string;
   email: string;
 }

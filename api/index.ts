@@ -98,9 +98,8 @@ fastify.post("/api/students", async (request, reply) => {
 fastify.get("/api/students/:id", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
@@ -108,7 +107,7 @@ fastify.get("/api/students/:id", async (request, reply) => {
     const [student] = await db
       .select()
       .from(students)
-      .where(eq(students.id, studentId))
+      .where(eq(students.id, id))
       .limit(1);
 
     if (!student) {
@@ -130,7 +129,7 @@ fastify.get("/api/students/:id", async (request, reply) => {
       })
       .from(studentsToPlans)
       .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .where(eq(studentsToPlans.studentId, studentId))
+      .where(eq(studentsToPlans.studentId, id))
       .orderBy(desc(studentsToPlans.createdAt));
 
     return reply.code(200).send({
@@ -147,9 +146,8 @@ fastify.get("/api/students/:id", async (request, reply) => {
 fastify.get("/api/students/:id/payments", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
@@ -174,7 +172,7 @@ fastify.get("/api/students/:id/payments", async (request, reply) => {
       )
       .innerJoin(students, eq(studentsToPlans.studentId, students.id))
       .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .where(eq(students.id, studentId))
+      .where(eq(students.id, id))
       .orderBy(desc(studentPayments.year), desc(studentPayments.month));
 
     return reply.code(200).send(payments);
@@ -188,9 +186,8 @@ fastify.get("/api/students/:id/payments", async (request, reply) => {
 fastify.get("/api/students/:id/plans", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
@@ -207,7 +204,7 @@ fastify.get("/api/students/:id/plans", async (request, reply) => {
       })
       .from(studentsToPlans)
       .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .where(eq(studentsToPlans.studentId, studentId))
+      .where(eq(studentsToPlans.studentId, id))
       .orderBy(desc(studentsToPlans.createdAt));
 
     return reply.code(200).send(studentPlans);
@@ -221,13 +218,12 @@ fastify.get("/api/students/:id/plans", async (request, reply) => {
 fastify.post("/api/students/:id/plans", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
-    const body = request.body as { planId?: number };
+    const body = request.body as { planId?: string };
 
     if (!body.planId) {
       return reply.code(400).send({ error: "planId is required" });
@@ -237,7 +233,7 @@ fastify.post("/api/students/:id/plans", async (request, reply) => {
     const [student] = await db
       .select()
       .from(students)
-      .where(eq(students.id, studentId))
+      .where(eq(students.id, id))
       .limit(1);
 
     if (!student) {
@@ -259,7 +255,7 @@ fastify.post("/api/students/:id/plans", async (request, reply) => {
     const [newEnrollment] = await db
       .insert(studentsToPlans)
       .values({
-        studentId: studentId,
+        studentId: id,
         planId: body.planId,
       })
       .returning();
@@ -278,14 +274,12 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
       id: string;
       enrollmentId: string;
     };
-    const studentId = parseInt(id, 10);
-    const enrollmentIdNum = parseInt(enrollmentId, 10);
 
-    if (isNaN(studentId) || isNaN(enrollmentIdNum)) {
+    if (!id || !enrollmentId) {
       return reply.code(400).send({ error: "Invalid ID" });
     }
 
-    const body = request.body as { planId?: number };
+    const body = request.body as { planId?: string };
 
     if (!body.planId) {
       return reply.code(400).send({ error: "planId is required" });
@@ -295,13 +289,13 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
     const existingEnrollment = await db
       .select()
       .from(studentsToPlans)
-      .where(eq(studentsToPlans.id, enrollmentIdNum));
+      .where(eq(studentsToPlans.id, enrollmentId));
 
     if (existingEnrollment.length === 0) {
       return reply.code(404).send({ error: "Enrollment not found" });
     }
 
-    if (existingEnrollment[0].studentId !== studentId) {
+    if (existingEnrollment[0].studentId !== id) {
       return reply
         .code(403)
         .send({ error: "Enrollment does not belong to this student" });
@@ -311,7 +305,7 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
     const updated = await db
       .update(studentsToPlans)
       .set({ planId: body.planId })
-      .where(eq(studentsToPlans.id, enrollmentIdNum))
+      .where(eq(studentsToPlans.id, enrollmentId))
       .returning();
 
     return reply.code(200).send(updated[0]);
@@ -327,9 +321,8 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
 fastify.put("/api/students/:id", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
@@ -345,7 +338,7 @@ fastify.put("/api/students/:id", async (request, reply) => {
     const updatedStudent = await db
       .update(students)
       .set(validation.data)
-      .where(eq(students.id, studentId))
+      .where(eq(students.id, id))
       .returning();
 
     if (updatedStudent.length === 0) {
@@ -363,15 +356,14 @@ fastify.put("/api/students/:id", async (request, reply) => {
 fastify.delete("/api/students/:id", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
-    const studentId = parseInt(id, 10);
 
-    if (isNaN(studentId)) {
+    if (!id) {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
     const deletedStudent = await db
       .delete(students)
-      .where(eq(students.id, studentId))
+      .where(eq(students.id, id))
       .returning();
 
     if (deletedStudent.length === 0) {
@@ -404,9 +396,8 @@ fastify.get("/api/plans", async (request, reply) => {
 // GET /api/plans/:id - Get single plan
 fastify.get("/api/plans/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const planId = parseInt(id, 10);
 
-  if (isNaN(planId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid plan ID" });
   }
 
@@ -414,7 +405,7 @@ fastify.get("/api/plans/:id", async (request, reply) => {
     const [plan] = await db
       .select()
       .from(plans)
-      .where(eq(plans.id, planId))
+      .where(eq(plans.id, id))
       .limit(1);
 
     if (!plan) {
@@ -462,9 +453,8 @@ fastify.post("/api/plans", async (request, reply) => {
 // PUT /api/plans/:id - Update plan
 fastify.put("/api/plans/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const planId = parseInt(id, 10);
 
-  if (isNaN(planId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid plan ID" });
   }
 
@@ -486,7 +476,7 @@ fastify.put("/api/plans/:id", async (request, reply) => {
         ...(body.monthlyFee !== undefined && { monthlyFee: body.monthlyFee }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       })
-      .where(eq(plans.id, planId))
+      .where(eq(plans.id, id))
       .returning();
 
     if (!updatedPlan) {
@@ -503,14 +493,13 @@ fastify.put("/api/plans/:id", async (request, reply) => {
 // DELETE /api/plans/:id - Delete plan
 fastify.delete("/api/plans/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const planId = parseInt(id, 10);
 
-  if (isNaN(planId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid plan ID" });
   }
 
   try {
-    await db.delete(plans).where(eq(plans.id, planId));
+    await db.delete(plans).where(eq(plans.id, id));
     return reply.code(204).send();
   } catch (error) {
     fastify.log.error(error);
@@ -556,9 +545,8 @@ fastify.get("/api/payments", async (request, reply) => {
 // GET /api/payments/:id - Get single payment
 fastify.get("/api/payments/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const paymentId = parseInt(id, 10);
 
-  if (isNaN(paymentId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid payment ID" });
   }
 
@@ -584,7 +572,7 @@ fastify.get("/api/payments/:id", async (request, reply) => {
       )
       .leftJoin(students, eq(studentsToPlans.studentId, students.id))
       .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .where(eq(studentPayments.id, paymentId))
+      .where(eq(studentPayments.id, id))
       .limit(1);
 
     if (!payment) {
@@ -601,7 +589,7 @@ fastify.get("/api/payments/:id", async (request, reply) => {
 // POST /api/payments - Create new payment
 fastify.post("/api/payments", async (request, reply) => {
   const body = request.body as {
-    studentToPlanId: number;
+    studentToPlanId: string;
     month: number;
     year: number;
     amount: number;
@@ -653,9 +641,8 @@ fastify.post("/api/payments", async (request, reply) => {
 // PUT /api/payments/:id - Update payment
 fastify.put("/api/payments/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const paymentId = parseInt(id, 10);
 
-  if (isNaN(paymentId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid payment ID" });
   }
 
@@ -681,7 +668,7 @@ fastify.put("/api/payments/:id", async (request, reply) => {
           observations: body.observations,
         }),
       })
-      .where(eq(studentPayments.id, paymentId))
+      .where(eq(studentPayments.id, id))
       .returning();
 
     if (!updatedPayment) {
@@ -698,14 +685,13 @@ fastify.put("/api/payments/:id", async (request, reply) => {
 // DELETE /api/payments/:id - Delete payment
 fastify.delete("/api/payments/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
-  const paymentId = parseInt(id, 10);
 
-  if (isNaN(paymentId)) {
+  if (!id) {
     return reply.code(400).send({ error: "Invalid payment ID" });
   }
 
   try {
-    await db.delete(studentPayments).where(eq(studentPayments.id, paymentId));
+    await db.delete(studentPayments).where(eq(studentPayments.id, id));
     return reply.code(204).send();
   } catch (error) {
     fastify.log.error(error);

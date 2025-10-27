@@ -1,6 +1,6 @@
 export interface StudentPayment {
-  id: number;
-  studentToPlanId: number;
+  id: string; // UUID
+  studentToPlanId: string; // UUID
   month: number;
   year: number;
   amount: number;
@@ -16,7 +16,7 @@ export interface StudentPayment {
 export type paymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
 
 export interface CreatePaymentInput {
-  studentToPlanId: number;
+  studentToPlanId: string; // UUID
   month: number;
   year: number;
   amount: number;
@@ -33,7 +33,7 @@ export interface UpdatePaymentInput {
 }
 
 export interface CreatePaymentInput {
-  studentToPlanId: number;
+  studentToPlanId: string; // UUID
   month: number;
   year: number;
   paymentMethod?: "cash" | "credit_card" | "debit_card" | "pix";

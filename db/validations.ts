@@ -21,7 +21,7 @@ export const createStudentSchema = z.object({
     .optional(),
   parentPhone: z.string().max(25).optional(),
   observations: z.string().optional(),
-  planId: z.number().int().positive("Plano é obrigatório"),
+  planId: z.string().uuid("Plano é obrigatório"),
 });
 
 export const updateStudentSchema = z.object({
@@ -51,7 +51,7 @@ export const updatePlanSchema = z.object({
 });
 
 export const createPaymentSchema = z.object({
-  studentToPlanId: z.number().int().positive(),
+  studentToPlanId: z.string().uuid(),
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2000),
   paymentMethod: z

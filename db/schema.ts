@@ -1,12 +1,12 @@
 import {
   pgTable,
-  serial,
   varchar,
   date,
   timestamp,
   integer,
   text,
   pgEnum,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -20,7 +20,7 @@ export const paymentMethodEnum = pgEnum("payment_method", [
 
 // Users table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(), // hashed password
@@ -30,7 +30,7 @@ export const users = pgTable("users", {
 
 // Students table
 export const students = pgTable("students", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 25 }),
@@ -45,7 +45,7 @@ export const students = pgTable("students", {
 
 // Plans table
 export const plans = pgTable("plans", {
-  id: serial("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 200 }).notNull(),
   description: text("description"),
   monthlyFee: integer("monthly_fee").notNull(), // Store in cents
@@ -54,11 +54,11 @@ export const plans = pgTable("plans", {
 
 // Students to plans junction table
 export const studentsToPlans = pgTable("students_to_plans", {
-  id: serial("id").primaryKey(),
-  studentId: integer("student_id")
+  id: uuid("id").primaryKey().defaultRandom(),
+  studentId: uuid("student_id")
     .notNull()
     .references(() => students.id, { onDelete: "cascade" }),
-  planId: integer("plan_id")
+  planId: uuid("plan_id")
     .notNull()
     .references(() => plans.id, { onDelete: "cascade" }),
   isActive: integer("is_active").notNull().default(1), // 1 = active, 0 = inactive
@@ -68,11 +68,11 @@ export const studentsToPlans = pgTable("students_to_plans", {
 
 // Student payments table
 export const studentPayments = pgTable("student_payments", {
-  id: serial("id").primaryKey(),
-  studentToPlanId: integer("student_to_plan_id")
+  id: uuid("id").primaryKey().defaultRandom(),
+  studentToPlanId: uuid("student_to_plan_id")
     .notNull()
     .references(() => studentsToPlans.id, { onDelete: "cascade" }),
-  planId: integer("plan_id")
+  planId: uuid("plan_id")
     .notNull()
     .references(() => plans.id, { onDelete: "cascade" }),
   month: integer("month").notNull(), // 1-12

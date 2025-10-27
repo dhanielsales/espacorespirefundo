@@ -10,7 +10,7 @@ import type { StudentPlanEnrollment } from "../types/student";
 interface PlanEnrollmentFormProps {
   open: boolean;
   onClose: () => void;
-  studentId: number;
+  studentId: string;
   enrollment?: StudentPlanEnrollment; // Optional - if provided, we're editing
 }
 
@@ -24,13 +24,13 @@ export function PlanEnrollmentForm({
   const isEditing = !!enrollment;
 
   const mutation = useMutation({
-    mutationFn: (planId: number) =>
+    mutationFn: (planId: string) =>
       isEditing
         ? studentsApi.updatePlanEnrollment(studentId, enrollment.id, planId)
         : studentsApi.createPlanEnrollment(studentId, planId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["student", String(studentId)],
+        queryKey: ["student", studentId],
       });
       toast.success(
         isEditing
@@ -49,10 +49,10 @@ export function PlanEnrollmentForm({
 
   const form = useForm({
     defaultValues: {
-      planId: enrollment?.planId || 0,
+      planId: enrollment?.planId || "",
     },
     onSubmit: async ({ value }) => {
-      if (!value.planId || value.planId === 0) {
+      if (!value.planId || value.planId === "") {
         toast.error("Selecione um plano");
         return;
       }
@@ -88,7 +88,7 @@ export function PlanEnrollmentForm({
           name="planId"
           validators={{
             onChange: ({ value }) => {
-              if (value === null || value === undefined || value === 0) {
+              if (value === null || value === undefined || value === "") {
                 return "Plano é obrigatório";
               }
             },
@@ -98,7 +98,7 @@ export function PlanEnrollmentForm({
             <div className="space-y-2">
               <SelectPlan
                 value={field.state.value}
-                onChange={(e) => field.handleChange(Number(e.target.value))}
+                onChange={(e) => field.handleChange(e.target.value)}
                 error={field.state.meta.errors.join(", ")}
                 required
               />

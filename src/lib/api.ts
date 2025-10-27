@@ -92,7 +92,7 @@ export const studentsApi = {
     return response.json();
   },
 
-  getById: async (id: number): Promise<Student> => {
+  getById: async (id: string): Promise<Student> => {
     const response = await fetch(`${API_BASE}/students/${id}`, {
       headers: getAuthHeaders(),
     });
@@ -102,7 +102,7 @@ export const studentsApi = {
     return response.json();
   },
 
-  getPayments: async (id: number): Promise<StudentPayment[]> => {
+  getPayments: async (id: string): Promise<StudentPayment[]> => {
     const response = await fetch(`${API_BASE}/students/${id}/payments`, {
       headers: getAuthHeaders(),
     });
@@ -125,7 +125,7 @@ export const studentsApi = {
     return response.json();
   },
 
-  update: async (id: number, data: UpdateStudentInput): Promise<Student> => {
+  update: async (id: string, data: UpdateStudentInput): Promise<Student> => {
     const response = await fetch(`${API_BASE}/students/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
@@ -138,7 +138,7 @@ export const studentsApi = {
     return response.json();
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/students/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(false),
@@ -149,10 +149,10 @@ export const studentsApi = {
   },
 
   updatePlanEnrollment: async (
-    studentId: number,
-    enrollmentId: number,
-    planId: number
-  ): Promise<{ id: number; studentId: number; planId: number }> => {
+    studentId: string,
+    enrollmentId: string,
+    planId: string
+  ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(
       `${API_BASE}/students/${studentId}/plans/${enrollmentId}`,
       {
@@ -169,9 +169,9 @@ export const studentsApi = {
   },
 
   createPlanEnrollment: async (
-    studentId: number,
-    planId: number
-  ): Promise<{ id: number; studentId: number; planId: number }> => {
+    studentId: string,
+    planId: string
+  ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(`${API_BASE}/students/${studentId}/plans`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -196,7 +196,7 @@ export const plansApi = {
     return response.json();
   },
 
-  getById: async (id: number): Promise<Plan> => {
+  getById: async (id: string): Promise<Plan> => {
     const response = await fetch(`${API_BASE}/plans/${id}`, {
       headers: getAuthHeaders(),
     });
@@ -219,7 +219,7 @@ export const plansApi = {
     return response.json();
   },
 
-  update: async (id: number, data: UpdatePlanInput): Promise<Plan> => {
+  update: async (id: string, data: UpdatePlanInput): Promise<Plan> => {
     const response = await fetch(`${API_BASE}/plans/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
@@ -232,7 +232,7 @@ export const plansApi = {
     return response.json();
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/plans/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(false),
@@ -254,7 +254,7 @@ export const paymentsApi = {
     return response.json();
   },
 
-  getById: async (id: number): Promise<StudentPayment> => {
+  getById: async (id: string): Promise<StudentPayment> => {
     const response = await fetch(`${API_BASE}/payments/${id}`, {
       headers: getAuthHeaders(),
     });
@@ -278,7 +278,7 @@ export const paymentsApi = {
   },
 
   update: async (
-    id: number,
+    id: string,
     data: UpdatePaymentInput
   ): Promise<StudentPayment> => {
     const response = await fetch(`${API_BASE}/payments/${id}`, {
@@ -293,7 +293,7 @@ export const paymentsApi = {
     return response.json();
   },
 
-  delete: async (id: number): Promise<void> => {
+  delete: async (id: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/payments/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(false),

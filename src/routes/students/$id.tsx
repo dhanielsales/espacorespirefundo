@@ -73,12 +73,12 @@ function StudentDetail() {
     refetch,
   } = useQuery({
     queryKey: ["student", id],
-    queryFn: () => studentsApi.getById(parseInt(id, 10)),
+    queryFn: () => studentsApi.getById(id),
   });
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["student-payments", id],
-    queryFn: () => studentsApi.getPayments(parseInt(id, 10)),
+    queryFn: () => studentsApi.getPayments(id),
     enabled: !!student,
   });
 
@@ -95,7 +95,7 @@ function StudentDetail() {
   });
 
   const handleDelete = () => {
-    deleteMutation.mutate(parseInt(id, 10));
+    deleteMutation.mutate(id);
   };
 
   return (
@@ -134,9 +134,7 @@ function StudentDetail() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-2xl">
-                    #{student.id} {student.fullName}
-                  </CardTitle>
+                  <CardTitle className="text-2xl">{student.fullName}</CardTitle>
                   <CardDescription>
                     Membro desde:{" "}
                     {new Date(student.createdAt).toLocaleDateString("pt-BR")}
