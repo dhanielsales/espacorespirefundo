@@ -588,6 +588,8 @@ fastify.get("/api/payments", async (request, reply) => {
         observations: studentPayments.observations,
         createdAt: studentPayments.createdAt,
         studentName: students.fullName,
+        studentId: students.id,
+        studentDeletedAt: students.deletedAt,
         planName: plans.name,
       })
       .from(studentPayments)

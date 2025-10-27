@@ -9,7 +9,9 @@ export interface StudentPayment {
   observations?: string | null;
   createdAt: string;
   // Joined fields
+  studentId?: string;
   studentName?: string | null;
+  studentDeletedAt?: string | null;
   planName?: string | null;
 }
 

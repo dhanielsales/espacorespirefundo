@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -39,6 +39,21 @@ function PaymentsPage() {
     {
       accessorKey: "studentName",
       header: "Aluno",
+      cell: ({ row }) => {
+        if (row.original.studentDeletedAt) {
+          return row.original.studentName;
+        }
+
+        return (
+          <Link
+            className="text-sky-500 underline"
+            to={`/students/$id`}
+            params={{ id: row.original.studentId as string }}
+          >
+            {row.original.studentName}
+          </Link>
+        );
+      },
     },
     {
       accessorKey: "planName",
