@@ -40,7 +40,9 @@ function LoginPage() {
       password: "",
     },
     onSubmit: async ({ value }) => {
-      mutation.mutate(value);
+      mutation.mutateAsync(value).then(() => {
+        form.reset();
+      });
     },
   });
 

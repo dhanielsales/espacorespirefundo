@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../components/ui/data-table";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { RowActions } from "../components/ui/row-actions";
 import { PlanForm } from "../components/PlanForm";
@@ -14,72 +15,24 @@ export const Route = createFileRoute("/plans/")({
   component: PlansPage,
 });
 
-const createColumns = (onEdit: (plan: Plan) => void): ColumnDef<Plan>[] => [
-  {
-    accessorKey: "name",
-    header: "Nome",
-  },
-  {
-    accessorKey: "description",
-    header: "Descrição",
-    cell: ({ row }) => {
-      const description = row.getValue("description") as string | null;
-      return description || "-";
-    },
-  },
-  {
-    accessorKey: "monthlyFee",
-    header: "Mensalidade",
-    cell: ({ row }) => {
-      const fee = row.getValue("monthlyFee") as number;
-      return new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(fee / 100);
-    },
-  },
-  {
-    accessorKey: "isActive",
-    header: "Status",
-    cell: ({ row }) => {
-      const isActive = row.getValue("isActive") as number;
-      return (
-        <Badge variant={isActive === 1 ? "success" : "destructive"}>
-          {isActive === 1 ? "Ativo" : "Inativo"}
-        </Badge>
-      );
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      return (
-        <RowActions
-          row={row}
-          actions={[
-            {
-              label: "Editar",
-              onClick: (plan) => onEdit(plan),
-            },
-          ]}
-        />
-      );
-    },
-  },
-];
-
 function PlansPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState("");
 
   const {
-    data: plans,
+    data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["plans"],
-    queryFn: plansApi.getAll,
+    queryKey: ["plans", page, limit, search],
+    queryFn: () => plansApi.getAll({ page, limit, search }),
   });
+
+  const plans = response?.data || [];
+  const pagination = response?.pagination;
 
   const handleEdit = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -91,7 +44,59 @@ function PlansPage() {
     setSelectedPlan(undefined);
   };
 
-  const columns = createColumns(handleEdit);
+  const columns: ColumnDef<Plan>[] = [
+    {
+      accessorKey: "name",
+      header: "Nome",
+    },
+    {
+      accessorKey: "description",
+      header: "Descrição",
+      cell: ({ row }) => {
+        const description = row.getValue("description") as string | null;
+        return description || "-";
+      },
+    },
+    {
+      accessorKey: "monthlyFee",
+      header: "Mensalidade",
+      cell: ({ row }) => {
+        const fee = row.getValue("monthlyFee") as number;
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }).format(fee / 100);
+      },
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = row.getValue("isActive") as number;
+        return (
+          <Badge variant={isActive === 1 ? "success" : "destructive"}>
+            {isActive === 1 ? "Ativo" : "Inativo"}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        return (
+          <RowActions
+            row={row}
+            actions={[
+              {
+                label: "Editar",
+                onClick: (plan) => handleEdit(plan),
+              },
+            ]}
+          />
+        );
+      },
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -111,11 +116,31 @@ function PlansPage() {
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden p-4">
+        <div className="mb-4 flex gap-4">
+          <Input
+            placeholder="Buscar por nome do plano..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
+
         <DataTable
           columns={columns}
-          data={plans || []}
+          data={plans}
           loading={isLoading}
           error={error ? new Error(error.message) : null}
+          pagination={
+            pagination
+              ? {
+                  pageIndex: page - 1,
+                  pageSize: limit,
+                  totalPages: pagination.totalPages,
+                  totalItems: pagination.total,
+                  onPageChange: (newPage) => setPage(newPage + 1),
+                }
+              : undefined
+          }
         />
       </div>
       <PlanForm

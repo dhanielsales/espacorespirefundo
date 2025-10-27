@@ -15,6 +15,7 @@ interface SelectPlanProps
   error?: string;
   disabled?: boolean;
   required?: boolean;
+  fetchActiveOnly?: boolean;
 }
 
 export function SelectPlan({
@@ -25,27 +26,27 @@ export function SelectPlan({
   error,
   disabled = false,
   required = false,
+  fetchActiveOnly = true,
   ...props
 }: SelectPlanProps) {
-  const { data: plans, isLoading } = useQuery({
+  const { data: data, isLoading } = useQuery({
     queryKey: ["plans"],
-    queryFn: plansApi.getAll,
+    queryFn: () => plansApi.getAll({ page: 1, limit: 100 }),
   });
 
   const options = useMemo(() => {
-    if (!plans) return [{ label: "Selecione um plano", value: "0" }];
+    if (!data?.data) return [];
     const result = [
-      { label: "Selecione um plano", value: "0" },
-      ...plans
+      ...data.data
         .map((plan) => {
-          if (!plan.isActive) return null;
+          if (!plan.isActive && fetchActiveOnly) return null;
           return { label: plan.name, value: String(plan.id) };
         })
         .filter(Boolean),
     ] as Array<{ label: string; value: string }>;
 
     return result;
-  }, [plans]);
+  }, [data, fetchActiveOnly]);
 
   return (
     <Select
@@ -57,6 +58,7 @@ export function SelectPlan({
       options={options}
       disabled={disabled || isLoading}
       required={required}
+      placeholder="Selecione um plano"
       {...props}
     />
   );

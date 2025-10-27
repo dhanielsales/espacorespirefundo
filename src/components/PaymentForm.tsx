@@ -133,8 +133,11 @@ export function PaymentForm({
       ...form.state.values,
       amount: Math.round(form.state.values.amount * 100),
     };
-    mutation.mutate(dataToSubmit as z.infer<typeof paymentSchema>);
-    setShowConfirmation(false);
+    mutation
+      .mutateAsync(dataToSubmit as z.infer<typeof paymentSchema>)
+      .then(() => {
+        setShowConfirmation(false);
+      });
   };
 
   // Update amount when enrollment selection changes

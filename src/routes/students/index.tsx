@@ -16,6 +16,7 @@ import { RowActions } from "../../components/ui/row-actions";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Student } from "../../types/student";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/students/")({
   beforeLoad: ({ location }) => {
@@ -34,16 +35,22 @@ export const Route = createFileRoute("/students/")({
 
 function StudentsPage() {
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   const {
-    data: students,
+    data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["students"],
-    queryFn: studentsApi.getAll,
+    queryKey: ["students", page, limit, search],
+    queryFn: () => studentsApi.getAll({ page, limit, search }),
   });
+
+  const students = response?.data || [];
+  const pagination = response?.pagination;
 
   const columns: ColumnDef<Student>[] = [
     {
@@ -141,11 +148,31 @@ function StudentsPage() {
         </div>
 
         <div className="bg-white shadow rounded-lg overflow-hidden p-4">
+          <div className="mb-4 flex gap-4">
+            <Input
+              placeholder="Buscar por nome ou CPF..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-xs"
+            />
+          </div>
+
           <DataTable
             columns={columns}
-            data={students || []}
+            data={students}
             loading={isLoading}
             error={error}
+            pagination={
+              pagination
+                ? {
+                    pageIndex: page - 1,
+                    pageSize: limit,
+                    totalPages: pagination.totalPages,
+                    totalItems: pagination.total,
+                    onPageChange: (newPage) => setPage(newPage + 1),
+                  }
+                : undefined
+            }
           />
         </div>
       </div>

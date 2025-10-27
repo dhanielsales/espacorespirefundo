@@ -97,7 +97,11 @@ function StudentDetail() {
   });
 
   const handleDelete = () => {
-    deleteMutation.mutate(id);
+    deleteMutation.mutateAsync(id).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Estudante excluído com sucesso!");
+      navigate({ to: "/students" });
+    });
   };
 
   return (

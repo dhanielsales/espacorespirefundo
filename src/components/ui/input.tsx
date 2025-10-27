@@ -7,14 +7,18 @@ export interface InputProps
   label?: string;
   error?: string;
   helperText?: React.ReactNode;
+  containerClassName?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, id, ...props }, ref) => {
+  (
+    { className, containerClassName, label, error, helperText, id, ...props },
+    ref
+  ) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <div className="w-full">
+      <div className={cn("w-full", containerClassName)}>
         {label && (
           <Label.Root
             htmlFor={inputId}

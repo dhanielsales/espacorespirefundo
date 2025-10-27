@@ -74,14 +74,21 @@ export function StudentForm({
       planId: "",
     },
     onSubmit: async ({ value }) => {
-      mutation.mutate(value as CreateStudentInput);
+      mutation.mutateAsync(value as CreateStudentInput).then(() => {
+        form.reset();
+      });
     },
   });
+
+  const handleOnClose = () => {
+    form.reset();
+    onClose();
+  };
 
   return (
     <Modal
       open={open}
-      onOpenChange={onClose}
+      onOpenChange={handleOnClose}
       title={isEditing ? "Editar Aluno" : "Adicionar Novo Aluno"}
       description={
         isEditing
@@ -129,37 +136,6 @@ export function StudentForm({
             </form.Field>
 
             <form.Field
-              name="cpf"
-              validators={{
-                onChange: ({ value }) => {
-                  if (!value) return undefined;
-                  const cleaned = cleanCPF(value);
-                  const result =
-                    createStudentSchema.shape.cpf.safeParse(cleaned);
-                  return result.success
-                    ? undefined
-                    : result.error.issues[0]?.message;
-                },
-              }}
-            >
-              {(field) => (
-                <Input
-                  label="CPF do Aluno"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => {
-                    const cleaned = cleanCPF(e.target.value);
-                    const formatted = formatCPF(cleaned);
-                    field.handleChange(formatted);
-                  }}
-                  error={field.state.meta.errors.join(", ")}
-                  placeholder="000.000.000-00"
-                  maxLength={14}
-                />
-              )}
-            </form.Field>
-
-            <form.Field
               name="birthDate"
               validators={{
                 onChange: ({ value }) => {
@@ -186,6 +162,37 @@ export function StudentForm({
                     </>
                   }
                   required
+                />
+              )}
+            </form.Field>
+
+            <form.Field
+              name="cpf"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return undefined;
+                  const cleaned = cleanCPF(value);
+                  const result =
+                    createStudentSchema.shape.cpf.safeParse(cleaned);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <Input
+                  label="CPF do Aluno"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    const cleaned = cleanCPF(e.target.value);
+                    const formatted = formatCPF(cleaned);
+                    field.handleChange(formatted);
+                  }}
+                  error={field.state.meta.errors.join(", ")}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
                 />
               )}
             </form.Field>
@@ -414,7 +421,7 @@ export function StudentForm({
         </form.Field>
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" onClick={onClose} variant="outline">
+          <Button type="button" onClick={handleOnClose} variant="outline">
             Cancelar
           </Button>
           <Button

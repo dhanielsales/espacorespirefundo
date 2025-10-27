@@ -6,7 +6,9 @@ import { FileText } from "lucide-react";
 import { DataTable } from "../components/ui/data-table";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
 import { PaymentReceiptModal } from "../components/PaymentReceiptModal";
+import { SelectPlan } from "../components/SelectPlan";
 import { paymentsApi } from "../lib/api";
 import type { StudentPayment } from "../types/payment";
 
@@ -25,15 +27,28 @@ function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<StudentPayment | null>(
     null
   );
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [planId, setPlanId] = useState("0");
 
   const {
-    data: payments,
+    data: response,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["payments"],
-    queryFn: paymentsApi.getAll,
+    queryKey: ["payments", page, limit, search, planId],
+    queryFn: () =>
+      paymentsApi.getAll({
+        page,
+        limit,
+        search,
+        planId: planId === "0" ? undefined : planId,
+      }),
   });
+
+  const payments = response?.data || [];
+  const pagination = response?.pagination;
 
   const columns: ColumnDef<StudentPayment>[] = [
     {
@@ -140,11 +155,38 @@ function PaymentsPage() {
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden p-4">
+        <div className="mb-4 flex gap-4 justify-start items-start">
+          <Input
+            placeholder="Buscar por nome ou CPF do aluno..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+            containerClassName="w-90"
+          />
+          <SelectPlan
+            label=""
+            value={planId}
+            onChange={(e) => setPlanId(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
+
         <DataTable
           columns={columns}
-          data={payments || []}
+          data={payments}
           loading={isLoading}
           error={error ? new Error(error.message) : null}
+          pagination={
+            pagination
+              ? {
+                  pageIndex: page - 1,
+                  pageSize: limit,
+                  totalPages: pagination.totalPages,
+                  totalItems: pagination.total,
+                  onPageChange: (newPage) => setPage(newPage + 1),
+                }
+              : undefined
+          }
         />
       </div>
 

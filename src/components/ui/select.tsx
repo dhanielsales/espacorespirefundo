@@ -7,7 +7,7 @@ export interface SelectProps
   label?: string;
   error?: string;
   helperText?: string;
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ value: string; label: string; isDefault?: boolean }>;
   placeholder?: string;
 }
 
@@ -43,11 +43,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           {...props}
         >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
+          {placeholder && <option value="">{placeholder}</option>}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

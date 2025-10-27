@@ -65,8 +65,10 @@ export function DataTable<TData, TValue>({
   };
 
   const startItem = pagination
-    ? pagination.pageIndex * pagination.pageSize + 1
-    : 1;
+    ? pagination.totalPages === 0
+      ? 0
+      : pagination.pageIndex * pagination.pageSize + 1
+    : 0;
   const endItem = pagination
     ? Math.min(
         (pagination.pageIndex + 1) * pagination.pageSize,
@@ -168,13 +170,13 @@ export function DataTable<TData, TValue>({
                 <TableCell colSpan={columns.length}>
                   <div className="flex items-center justify-between px-2">
                     <div className="flex-1 text-sm text-muted-foreground">
-                      Showing {startItem} to {endItem} of{" "}
-                      {pagination.totalItems} results
+                      Mostrando {startItem} a {endItem} de{" "}
+                      {pagination.totalItems} resultados
                     </div>
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium">
-                          Page {pagination.pageIndex + 1} of{" "}
+                        <p className="text-sm font-medium w-30">
+                          Página {pagination.pageIndex + 1} de{" "}
                           {pagination.totalPages}
                         </p>
                       </div>

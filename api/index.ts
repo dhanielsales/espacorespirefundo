@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { eq, desc, isNull, and } from "drizzle-orm";
+import { eq, desc, isNull, and, sql } from "drizzle-orm";
 
 import { db } from "../db/index.js";
 import {
@@ -66,14 +66,56 @@ fastify.addHook("onRequest", async (request, reply) => {
   (request as any).user = user;
 });
 
-// GET /api/students - List all students
+// GET /api/students - List all students with pagination and filters
 fastify.get("/api/students", async (request, reply) => {
   try {
+    const query = request.query as {
+      page?: string;
+      limit?: string;
+      search?: string;
+    };
+
+    const page = parseInt(query.page || "1");
+    const limit = parseInt(query.limit || "10");
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const conditions = [isNull(students.deletedAt)];
+
+    if (query.search) {
+      conditions.push(
+        sql`${students.fullName} ILIKE ${`%${query.search}%`} OR ${
+          students.cpf
+        } ILIKE ${`%${cleanCPF(query.search)}%`}`
+      );
+    }
+
+    // Get total count
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(students)
+      .where(and(...conditions));
+
+    // Get paginated results
     const allStudents = await db
       .select()
       .from(students)
-      .where(isNull(students.deletedAt));
-    return reply.code(200).send(allStudents);
+      .where(and(...conditions))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(students.createdAt));
+
+    const totalPages = Math.ceil(count / limit);
+
+    return reply.code(200).send({
+      data: allStudents,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages,
+      },
+    });
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to fetch students" });
@@ -445,12 +487,60 @@ fastify.delete("/api/students/:id", async (request, reply) => {
 });
 
 // ===== PLANS ROUTES =====
-
-// GET /api/plans - List all plans
+// GET /api/plans - List all plans with pagination and filters
 fastify.get("/api/plans", async (request, reply) => {
   try {
-    const allPlans = await db.select().from(plans).orderBy(desc(plans.id));
-    return reply.code(200).send(allPlans);
+    const query = request.query as {
+      page?: string;
+      limit?: string;
+      search?: string;
+    };
+
+    const page = parseInt(query.page || "1");
+    const limit = parseInt(query.limit || "10");
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const conditions = [];
+
+    if (query.search) {
+      conditions.push(sql`${plans.name} ILIKE ${`%${query.search}%`}`);
+    }
+
+    // Get total count
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(plans);
+
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQuery;
+
+    // Get paginated results
+    const plansQuery = db
+      .select()
+      .from(plans)
+      .orderBy(desc(plans.id))
+      .limit(limit)
+      .offset(offset);
+
+    if (conditions.length > 0) {
+      plansQuery.where(and(...conditions));
+    }
+
+    const allPlans = await plansQuery;
+
+    const totalPages = Math.ceil(count / limit);
+
+    return reply.code(200).send({
+      data: allPlans,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages,
+      },
+    });
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to fetch plans" });
@@ -554,29 +644,56 @@ fastify.put("/api/plans/:id", async (request, reply) => {
   }
 });
 
-// DELETE /api/plans/:id - Delete plan
-fastify.delete("/api/plans/:id", async (request, reply) => {
-  const { id } = request.params as { id: string };
-
-  if (!id) {
-    return reply.code(400).send({ error: "Invalid plan ID" });
-  }
-
-  try {
-    await db.delete(plans).where(eq(plans.id, id));
-    return reply.code(204).send();
-  } catch (error) {
-    fastify.log.error(error);
-    return reply.code(500).send({ error: "Failed to delete plan" });
-  }
-});
-
 // ===== PAYMENTS ROUTES =====
 
-// GET /api/payments - List all payments with joins
+// GET /api/payments - List all payments with joins, pagination and filters
 fastify.get("/api/payments", async (request, reply) => {
   try {
-    const allPayments = await db
+    const query = request.query as {
+      page?: string;
+      limit?: string;
+      search?: string;
+      planId?: string;
+    };
+
+    const page = parseInt(query.page || "1");
+    const limit = parseInt(query.limit || "10");
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const conditions = [];
+
+    if (query.search) {
+      conditions.push(
+        sql`${students.fullName} ILIKE ${`%${query.search}%`} OR ${
+          students.cpf
+        } ILIKE ${`%${cleanCPF(query.search)}%`}`
+      );
+    }
+
+    if (query.planId) {
+      conditions.push(eq(plans.id, query.planId));
+    }
+
+    // Get total count
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(studentPayments)
+      .leftJoin(
+        studentsToPlans,
+        eq(studentPayments.studentToPlanId, studentsToPlans.id)
+      )
+      .leftJoin(students, eq(studentsToPlans.studentId, students.id))
+      .leftJoin(plans, eq(studentsToPlans.planId, plans.id));
+
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQuery;
+
+    // Get paginated results
+    const paymentsQuery = db
       .select({
         id: studentPayments.id,
         studentToPlanId: studentPayments.studentToPlanId,
@@ -599,9 +716,27 @@ fastify.get("/api/payments", async (request, reply) => {
       )
       .leftJoin(students, eq(studentsToPlans.studentId, students.id))
       .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
-      .orderBy(desc(studentPayments.createdAt));
+      .orderBy(desc(studentPayments.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return reply.code(200).send(allPayments);
+    if (conditions.length > 0) {
+      paymentsQuery.where(and(...conditions));
+    }
+
+    const allPayments = await paymentsQuery;
+
+    const totalPages = Math.ceil(count / limit);
+
+    return reply.code(200).send({
+      data: allPayments,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages,
+      },
+    });
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to fetch payments" });
@@ -745,23 +880,6 @@ fastify.put("/api/payments/:id", async (request, reply) => {
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to update payment" });
-  }
-});
-
-// DELETE /api/payments/:id - Delete payment
-fastify.delete("/api/payments/:id", async (request, reply) => {
-  const { id } = request.params as { id: string };
-
-  if (!id) {
-    return reply.code(400).send({ error: "Invalid payment ID" });
-  }
-
-  try {
-    await db.delete(studentPayments).where(eq(studentPayments.id, id));
-    return reply.code(204).send();
-  } catch (error) {
-    fastify.log.error(error);
-    return reply.code(500).send({ error: "Failed to delete payment" });
   }
 });
 

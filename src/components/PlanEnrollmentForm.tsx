@@ -58,10 +58,14 @@ export function PlanEnrollmentForm({
         toast.error("Selecione um plano");
         return;
       }
-      mutation.mutate({
-        planId: value.planId,
-        isActive: value.isActive,
-      });
+      mutation
+        .mutateAsync({
+          planId: value.planId,
+          isActive: value.isActive,
+        })
+        .then(() => {
+          form.reset();
+        });
     },
   });
 

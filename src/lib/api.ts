@@ -18,6 +18,16 @@ interface User {
   email: string;
 }
 
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 const API_BASE = "/api";
 
 function handleUnauthorized() {
@@ -92,8 +102,21 @@ export const authApi = {
 };
 
 export const studentsApi = {
-  getAll: async (): Promise<Student[]> => {
-    const response = await fetch(`${API_BASE}/students`, {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<Student>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `${API_BASE}/students${
+      queryParams.toString() ? `?${queryParams}` : ""
+    }`;
+
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     await handleResponse(response);
@@ -218,8 +241,21 @@ export const studentsApi = {
 };
 
 export const plansApi = {
-  getAll: async (): Promise<Plan[]> => {
-    const response = await fetch(`${API_BASE}/plans`, {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<Plan>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+
+    const url = `${API_BASE}/plans${
+      queryParams.toString() ? `?${queryParams}` : ""
+    }`;
+
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     await handleResponse(response);
@@ -267,22 +303,27 @@ export const plansApi = {
     }
     return response.json();
   },
-
-  delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE}/plans/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(false),
-    });
-    await handleResponse(response);
-    if (!response.ok) {
-      throw new Error("Failed to delete plan");
-    }
-  },
 };
 
 export const paymentsApi = {
-  getAll: async (): Promise<StudentPayment[]> => {
-    const response = await fetch(`${API_BASE}/payments`, {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+
+    planId?: string;
+  }): Promise<PaginatedResponse<StudentPayment>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.planId) queryParams.append("planId", params.planId);
+
+    const url = `${API_BASE}/payments${
+      queryParams.toString() ? `?${queryParams}` : ""
+    }`;
+
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     await handleResponse(response);
@@ -332,16 +373,5 @@ export const paymentsApi = {
       throw new Error(error.error || "Failed to update payment");
     }
     return response.json();
-  },
-
-  delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${API_BASE}/payments/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(false),
-    });
-    await handleResponse(response);
-    if (!response.ok) {
-      throw new Error("Failed to delete payment");
-    }
   },
 };

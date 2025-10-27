@@ -60,14 +60,19 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
       isActive: plan?.isActive ?? 1,
     },
     onSubmit: async ({ value }) => {
-      mutation.mutate(value);
+      mutation.mutateAsync(value).then(() => {
+        form.reset();
+      });
     },
   });
 
   return (
     <Modal
       open={isOpen}
-      onOpenChange={onClose}
+      onOpenChange={() => {
+        form.reset();
+        onClose();
+      }}
       title={isEditMode ? "Editar Plano" : "Adicionar Novo Plano"}
     >
       <form
