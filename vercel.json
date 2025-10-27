@@ -1,0 +1,21 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install",
+  "framework": "vite",
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "db/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/auth/:path*",
+      "destination": "/api/auth"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ]
+}

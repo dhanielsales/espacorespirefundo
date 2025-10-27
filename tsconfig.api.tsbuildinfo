@@ -1,0 +1,1 @@
+{"root":["./api/auth-utils.ts","./api/auth.ts","./api/index.ts","./db/index.ts","./db/schema.ts","./db/validations.ts"],"version":"5.9.3"}

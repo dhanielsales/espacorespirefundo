@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 18% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 18% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 18% 7%;
+    --primary: 252 45% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 252 68% 76%;
+    --secondary-foreground: 240 18% 7%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 336 57% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 252 45% 38%;
+    --radius: 0.5rem;
+
+    /* Brand Colors */
+    --brand-violet: #3A3768;
+    --brand-violet-light: #968EF5;
+    --brand-pink: #D45D92;
+    --brand-pink-light: #FFBADC;
+    --brand-white: #FFFFFF;
+    --brand-black: #0d0d16;
+  }
+
+  .dark {
+    --background: 240 18% 7%;
+    --foreground: 0 0% 100%;
+    --card: 240 18% 7%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 18% 7%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 252 45% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 252 68% 76%;
+    --secondary-foreground: 240 18% 7%;
+    --muted: 240 6% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 336 57% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 252 45% 38%;
+
+    /* Brand Colors (same in dark mode) */
+    --brand-violet: #3A3768;
+    --brand-violet-light: #968EF5;
+    --brand-pink: #D45D92;
+    --brand-pink-light: #FFBADC;
+    --brand-white: #FFFFFF;
+    --brand-black: #0d0d16;
+  }
+
+  .font-dancing-script {
+    font-family: 'Dancing Script', cursive;
+  }
+
+  /* Brand Color Classes - Violet Variations (100-900 scale) */
+  .bg-brand-violet-100 { background-color: #F5F3FE; }
+  .bg-brand-violet-200 { background-color: #EBE7FD; }
+  .bg-brand-violet-300 { background-color: #DCCFFC; }
+  .bg-brand-violet-400 { background-color: #B7AEFA; }
+  .bg-brand-violet-500 { background-color: #968EF5; }
+  .bg-brand-violet-600 { background-color: #716B96; }
+  .bg-brand-violet-700 { background-color: #3A3768; }
+  .bg-brand-violet-800 { background-color: #23213E; }
+  .bg-brand-violet-900 { background-color: #0C0B15; }
+
+  /* Brand Color Classes - Pink Variations */
+  .bg-brand-pink-100 { background-color: #FFF5FB; }
+  .bg-brand-pink-200 { background-color: #FFEBF7; }
+  .bg-brand-pink-300 { background-color: #FFD7EF; }
+  .bg-brand-pink-400 { background-color: #FFC9E8; }
+  .bg-brand-pink-500 { background-color: #FFBADC; }
+  .bg-brand-pink-600 { background-color: #DE7EA9; }
+  .bg-brand-pink-700 { background-color: #D45D92; }
+  .bg-brand-pink-800 { background-color: #7F3858; }
+  .bg-brand-pink-900 { background-color: #2A131D; }
+
+  /* Legacy brand colors */
+  .bg-brand-violet {
+    background-color: #3A3768;
+  }
+  .bg-brand-violet-light {
+    background-color: #968EF5;
+  }
+  .bg-brand-pink {
+    background-color: #D45D92;
+  }
+  .bg-brand-pink-light {
+    background-color: #FFBADC;
+  }
+  .bg-brand-white {
+    background-color: #FFFFFF;
+  }
+  .bg-brand-black {
+    background-color: #0d0d16;
+  }
+
+  /* Text Color Variations - Violet (100-900 scale) */
+  .text-brand-violet-100 { color: #F5F3FE; }
+  .text-brand-violet-200 { color: #EBE7FD; }
+  .text-brand-violet-300 { color: #DCCFFC; }
+  .text-brand-violet-400 { color: #B7AEFA; }
+  .text-brand-violet-500 { color: #968EF5; }
+  .text-brand-violet-600 { color: #716B96; }
+  .text-brand-violet-700 { color: #3A3768; }
+  .text-brand-violet-800 { color: #23213E; }
+  .text-brand-violet-900 { color: #0C0B15; }
+
+  /* Text Color Variations - Pink */
+  .text-brand-pink-100 { color: #FFF5FB; }
+  .text-brand-pink-200 { color: #FFEBF7; }
+  .text-brand-pink-300 { color: #FFD7EF; }
+  .text-brand-pink-400 { color: #FFC9E8; }
+  .text-brand-pink-500 { color: #FFBADC; }
+  .text-brand-pink-600 { color: #DE7EA9; }
+  .text-brand-pink-700 { color: #D45D92; }
+  .text-brand-pink-800 { color: #7F3858; }
+  .text-brand-pink-900 { color: #2A131D; }
+
+  /* Legacy text colors */
+  .text-brand-violet {
+    color: #3A3768;
+  }
+  .text-brand-violet-light {
+    color: #968EF5;
+  }
+  .text-brand-pink {
+    color: #D45D92;
+  }
+  .text-brand-pink-light {
+    color: #FFBADC;
+  }
+  .text-brand-white {
+    color: #FFFFFF;
+  }
+  .text-brand-black {
+    color: #0d0d16;
+  }
+
+  /* Border Color Variations - Violet (100-900 scale) */
+  .border-brand-violet-100 { border-color: #F5F3FE; }
+  .border-brand-violet-200 { border-color: #EBE7FD; }
+  .border-brand-violet-300 { border-color: #DCCFFC; }
+  .border-brand-violet-400 { border-color: #B7AEFA; }
+  .border-brand-violet-500 { border-color: #968EF5; }
+  .border-brand-violet-600 { border-color: #716B96; }
+  .border-brand-violet-700 { border-color: #3A3768; }
+  .border-brand-violet-800 { border-color: #23213E; }
+  .border-brand-violet-900 { border-color: #0C0B15; }
+
+  /* Border Color Variations - Pink */
+  .border-brand-pink-100 { border-color: #FFF5FB; }
+  .border-brand-pink-200 { border-color: #FFEBF7; }
+  .border-brand-pink-300 { border-color: #FFD7EF; }
+  .border-brand-pink-400 { border-color: #FFC9E8; }
+  .border-brand-pink-500 { border-color: #FFBADC; }
+  .border-brand-pink-600 { border-color: #DE7EA9; }
+  .border-brand-pink-700 { border-color: #D45D92; }
+  .border-brand-pink-800 { border-color: #7F3858; }
+  .border-brand-pink-900 { border-color: #2A131D; }
+
+  /* Legacy border colors */
+  .border-brand-violet {
+    border-color: #3A3768;
+  }
+  .border-brand-violet-light {
+    border-color: #968EF5;
+  }
+  .border-brand-pink {
+    border-color: #D45D92;
+  }
+  .border-brand-pink-light {
+    border-color: #FFBADC;
+  }
+
+  /* Hover states */
+  .hover\:bg-brand-violet:hover {
+    background-color: #3A3768;
+  }
+  .hover\:bg-brand-violet-light:hover {
+    background-color: #968EF5;
+  }
+  .hover\:bg-brand-pink:hover {
+    background-color: #D45D92;
+  }
+  .hover\:text-brand-violet:hover {
+    color: #3A3768;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
