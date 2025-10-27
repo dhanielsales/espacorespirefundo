@@ -31,9 +31,12 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
   const mutation = useMutation({
     mutationFn: (data: z.infer<typeof planSchema>) => {
       if (isEditMode && plan) {
-        return plansApi.update(plan.id, data);
+        return plansApi.update(plan.id, {
+          ...data,
+          monthlyFee: data.monthlyFee * 100,
+        });
       }
-      return plansApi.create(data);
+      return plansApi.create({ ...data, monthlyFee: data.monthlyFee * 100 });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans"] });

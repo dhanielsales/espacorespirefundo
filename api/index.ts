@@ -66,11 +66,23 @@ fastify.post("/api/students", async (request, reply) => {
       });
     }
 
+    const { planId, ...studentData } = validation.data;
+
+    // Create student
     const newStudent = await db
       .insert(students)
-      .values(validation.data)
+      .values(studentData)
       .returning();
-    return reply.code(201).send(newStudent[0]);
+
+    const student = newStudent[0];
+
+    // Enroll student in plan
+    await db.insert(studentsToPlans).values({
+      studentId: student.id,
+      planId: planId,
+    });
+
+    return reply.code(201).send(student);
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to create student" });

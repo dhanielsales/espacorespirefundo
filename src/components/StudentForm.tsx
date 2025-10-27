@@ -9,6 +9,7 @@ import { Modal } from "./ui/modal";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
+import { SelectPlan } from "./SelectPlan";
 
 interface StudentFormProps {
   open: boolean;
@@ -28,7 +29,11 @@ export function StudentForm({
 
   const mutation = useMutation({
     mutationFn: isEditing
-      ? (data: CreateStudentInput) => studentsApi.update(student.id, data)
+      ? (data: CreateStudentInput) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { planId, ...updateData } = data;
+          return studentsApi.update(student.id, updateData);
+        }
       : studentsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -63,6 +68,7 @@ export function StudentForm({
       parentEmail: student?.parentEmail || "",
       parentPhone: student?.parentPhone || "",
       observations: student?.observations || "",
+      planId: student?.planId || 0,
     },
     onSubmit: async ({ value }) => {
       mutation.mutate(value as CreateStudentInput);
@@ -89,103 +95,137 @@ export function StudentForm({
         }}
         className="space-y-4"
       >
-        <form.Field
-          name="fullName"
-          validators={{
-            onChange: ({ value }) => {
-              const result =
-                createStudentSchema.shape.fullName.safeParse(value);
-              return result.success
-                ? undefined
-                : result.error.issues[0]?.message;
-            },
-          }}
-        >
-          {(field) => (
-            <Input
-              label="Nome Completo"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              error={field.state.meta.errors.join(", ")}
-              required
-            />
-          )}
-        </form.Field>
+        <div className="border-t pt-4 ">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">
+            Informações do Aluno
+          </h3>
 
-        <form.Field
-          name="birthDate"
-          validators={{
-            onChange: ({ value }) => {
-              const result =
-                createStudentSchema.shape.birthDate.safeParse(value);
-              return result.success
-                ? undefined
-                : result.error.issues[0]?.message;
-            },
-          }}
-        >
-          {(field) => (
-            <Input
-              label="Data de Nascimento"
-              type="date"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              error={field.state.meta.errors.join(", ")}
-              required
-            />
-          )}
-        </form.Field>
+          <div className="space-y-4">
+            <form.Field
+              name="fullName"
+              validators={{
+                onChange: ({ value }) => {
+                  const result =
+                    createStudentSchema.shape.fullName.safeParse(value);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <Input
+                  label="Nome Completo"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  error={field.state.meta.errors.join(", ")}
+                  required
+                />
+              )}
+            </form.Field>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <form.Field
-            name="email"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value) return undefined;
-                const result = createStudentSchema.shape.email.safeParse(value);
-                return result.success
-                  ? undefined
-                  : result.error.issues[0]?.message;
-              },
-            }}
-          >
-            {(field) => (
-              <Input
-                label="Email"
-                type="email"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                error={field.state.meta.errors.join(", ")}
-              />
-            )}
-          </form.Field>
+            <form.Field
+              name="birthDate"
+              validators={{
+                onChange: ({ value }) => {
+                  const result =
+                    createStudentSchema.shape.birthDate.safeParse(value);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <Input
+                  label="Data de Nascimento"
+                  type="date"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  error={field.state.meta.errors.join(", ")}
+                  required
+                />
+              )}
+            </form.Field>
 
-          <form.Field
-            name="phone"
-            validators={{
-              onChange: ({ value }) => {
-                if (!value) return undefined;
-                const result = createStudentSchema.shape.phone.safeParse(value);
-                return result.success
-                  ? undefined
-                  : result.error.issues[0]?.message;
-              },
-            }}
-          >
-            {(field) => (
-              <Input
-                label="Telefone"
-                type="tel"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                error={field.state.meta.errors.join(", ")}
-              />
-            )}
-          </form.Field>
+            <form.Field
+              name="planId"
+              validators={{
+                onChange: ({ value }) => {
+                  const result =
+                    createStudentSchema.shape.planId.safeParse(value);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <SelectPlan
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(Number(e.target.value))}
+                  onBlur={field.handleBlur}
+                  error={field.state.meta.errors.join(", ")}
+                  disabled={isEditing}
+                  required={!isEditing}
+                />
+              )}
+            </form.Field>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form.Field
+                name="email"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value) return undefined;
+                    const result =
+                      createStudentSchema.shape.email.safeParse(value);
+                    return result.success
+                      ? undefined
+                      : result.error.issues[0]?.message;
+                  },
+                }}
+              >
+                {(field) => (
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    error={field.state.meta.errors.join(", ")}
+                  />
+                )}
+              </form.Field>
+
+              <form.Field
+                name="phone"
+                validators={{
+                  onChange: ({ value }) => {
+                    if (!value) return undefined;
+                    const result =
+                      createStudentSchema.shape.phone.safeParse(value);
+                    return result.success
+                      ? undefined
+                      : result.error.issues[0]?.message;
+                  },
+                }}
+              >
+                {(field) => (
+                  <Input
+                    label="Telefone"
+                    type="tel"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    error={field.state.meta.errors.join(", ")}
+                  />
+                )}
+              </form.Field>
+            </div>
+          </div>
         </div>
 
         <div className="border-t pt-4 mt-6">

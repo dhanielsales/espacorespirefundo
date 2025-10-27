@@ -29,6 +29,7 @@ export interface CreateStudentInput {
   parentEmail?: string;
   parentPhone?: string;
   observations?: string;
+  planId: number;
 }
 
 export interface UpdateStudentInput {

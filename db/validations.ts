@@ -1,16 +1,17 @@
 import { z } from "zod";
 
 export const createStudentSchema = z.object({
-  fullName: z.string().min(1, "Full name is required").max(255),
-  email: z.string().email("Invalid email address").max(255).optional(),
+  fullName: z.string().min(1, "Nome completo é obrigatório").max(255),
+  email: z.string().email("Email inválido").max(255).optional(),
   phone: z.string().max(25).optional(),
   birthDate: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   parentName: z.string().max(255).optional(),
-  parentEmail: z.string().email("Invalid email address").max(255).optional(),
+  parentEmail: z.string().email("Email inválido").max(255).optional(),
   parentPhone: z.string().max(25).optional(),
   observations: z.string().optional(),
+  planId: z.number().int().positive("Plano é obrigatório"),
 });
 
 export const updateStudentSchema = z.object({
@@ -28,9 +29,9 @@ export const updateStudentSchema = z.object({
 });
 
 export const createPlanSchema = z.object({
-  name: z.string().min(1, "Plan name is required").max(200),
+  name: z.string().min(1, "Nome do plano é obrigatório").max(200),
   description: z.string().optional(),
-  monthlyFee: z.number().int().min(0, "Monthly fee must be positive"),
+  monthlyFee: z.number().int().min(0, "Mensalidade deve ser positiva"),
 });
 
 export const updatePlanSchema = z.object({
@@ -69,17 +70,17 @@ export const updatePaymentSchema = z.object({
 
 // Auth schemas
 export const registerSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(255),
-  email: z.string().email("Invalid email address").max(255),
+  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres").max(255),
+  email: z.string().email("Email inválido").max(255),
   password: z
     .string()
-    .min(5, "Password must be at least 6 characters")
+    .min(5, "Senha deve ter pelo menos 6 caracteres")
     .max(255),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(1, "Senha é obrigatória"),
 });
 
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;

@@ -2,6 +2,7 @@ import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "./spinner";
 
 interface ModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
+  isLoading?: boolean;
 }
 
 const sizeClasses = {
@@ -26,6 +28,7 @@ export function Modal({
   description,
   children,
   size = "md",
+  isLoading = false,
 }: ModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -50,7 +53,13 @@ export function Modal({
           )}
 
           <div className="max-h-[70vh] overflow-y-auto px-1 -mx-1">
-            {children}
+            {isLoading ? (
+              <div className="flex justify-center items-center py-48">
+                <Spinner />
+              </div>
+            ) : (
+              children
+            )}
           </div>
 
           <Dialog.Close asChild>

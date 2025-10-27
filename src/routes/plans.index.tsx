@@ -39,7 +39,7 @@ const createColumns = (onEdit: (plan: Plan) => void): ColumnDef<Plan>[] => [
       return new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
-      }).format(fee);
+      }).format(fee / 100);
     },
   },
   {
