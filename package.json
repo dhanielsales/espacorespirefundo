@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev:vercel": "vercel dev",
+    "dev:vercel": "vercel dev --local-config vercel-dev.json",
     "dev:web": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -48,6 +48,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
+    "recharts": "^3.3.0",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"

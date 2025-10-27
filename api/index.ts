@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { eq, desc, isNull, and, sql } from "drizzle-orm";
+import { eq, desc, isNull, and, sql, or, isNotNull } from "drizzle-orm";
 
 import { db } from "../db/index.js";
 import {
@@ -880,6 +880,148 @@ fastify.put("/api/payments/:id", async (request, reply) => {
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to update payment" });
+  }
+});
+
+// GET /api/dashboard/stats - Get dashboard statistics
+fastify.get("/api/dashboard/stats", async (request, reply) => {
+  try {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+    const currentYear = currentDate.getFullYear();
+
+    // Total number of active students (not deleted)
+    const [{ count: totalStudents }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(students)
+      .where(isNull(students.deletedAt));
+
+    // Total revenue of current month
+    const [{ total: currentMonthRevenue }] = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${studentPayments.amount}), 0)`,
+      })
+      .from(studentPayments)
+      .where(
+        and(
+          eq(studentPayments.month, currentMonth),
+          eq(studentPayments.year, currentYear),
+          isNotNull(studentPayments.paidAt)
+        )
+      );
+
+    // Total active plans (with at least one active enrollment)
+    const activePlansResult = await db
+      .selectDistinct({ planId: studentsToPlans.planId })
+      .from(studentsToPlans)
+      .where(eq(studentsToPlans.isActive, 1));
+
+    const totalActivePlans = activePlansResult.length;
+
+    return reply.code(200).send({
+      totalStudents: Number(totalStudents),
+      currentMonthRevenue: Number(currentMonthRevenue),
+      totalActivePlans,
+    });
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.code(500).send({ error: "Failed to fetch dashboard stats" });
+  }
+});
+
+// GET /api/dashboard/students-chart - Get students per month for last 12 months
+fastify.get("/api/dashboard/students-chart", async (request, reply) => {
+  try {
+    const currentDate = new Date();
+    const months = [];
+
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1
+      );
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
+
+      // Count students created up to the end of this month
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(students)
+        .where(
+          and(
+            sql`${students.createdAt} <= ${endOfMonth.toISOString()}`,
+            or(
+              isNull(students.deletedAt),
+              sql`${students.deletedAt} > ${endOfMonth.toISOString()}`
+            )
+          )
+        );
+
+      months.push({
+        month: monthName,
+        students: Number(count),
+        year,
+      });
+    }
+
+    return reply.code(200).send(months);
+  } catch (error) {
+    fastify.log.error(error);
+    return reply
+      .code(500)
+      .send({ error: "Failed to fetch students chart data" });
+  }
+});
+
+// GET /api/dashboard/revenue-chart - Get revenue per month for last 12 months
+fastify.get("/api/dashboard/revenue-chart", async (request, reply) => {
+  try {
+    const currentDate = new Date();
+    const months = [];
+
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1
+      );
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
+
+      // Sum payments for this month
+      const [{ total }] = await db
+        .select({
+          total: sql<number>`COALESCE(SUM(${studentPayments.amount}), 0)`,
+        })
+        .from(studentPayments)
+        .where(
+          and(
+            eq(studentPayments.month, month),
+            eq(studentPayments.year, year),
+            isNotNull(studentPayments.paidAt)
+          )
+        );
+
+      months.push({
+        month: monthName,
+        revenue: Number(total) / 100, // Convert from cents to reais
+        year,
+      });
+    }
+
+    return reply.code(200).send(months);
+  } catch (error) {
+    fastify.log.error(error);
+    return reply
+      .code(500)
+      .send({ error: "Failed to fetch revenue chart data" });
   }
 });
 

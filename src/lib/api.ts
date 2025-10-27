@@ -375,3 +375,56 @@ export const paymentsApi = {
     return response.json();
   },
 };
+
+export interface DashboardStats {
+  totalStudents: number;
+  currentMonthRevenue: number;
+  totalActivePlans: number;
+}
+
+export interface StudentsChartData {
+  month: string;
+  students: number;
+  year: number;
+}
+
+export interface RevenueChartData {
+  month: string;
+  revenue: number;
+  year: number;
+}
+
+export const dashboardApi = {
+  getStats: async (): Promise<DashboardStats> => {
+    const response = await fetch(`${API_BASE}/dashboard/stats`, {
+      headers: getAuthHeaders(),
+    });
+    await handleResponse(response);
+    if (!response.ok) {
+      throw new Error("Failed to fetch dashboard stats");
+    }
+    return response.json();
+  },
+
+  getStudentsChart: async (): Promise<StudentsChartData[]> => {
+    const response = await fetch(`${API_BASE}/dashboard/students-chart`, {
+      headers: getAuthHeaders(),
+    });
+    await handleResponse(response);
+    if (!response.ok) {
+      throw new Error("Failed to fetch students chart data");
+    }
+    return response.json();
+  },
+
+  getRevenueChart: async (): Promise<RevenueChartData[]> => {
+    const response = await fetch(`${API_BASE}/dashboard/revenue-chart`, {
+      headers: getAuthHeaders(),
+    });
+    await handleResponse(response);
+    if (!response.ok) {
+      throw new Error("Failed to fetch revenue chart data");
+    }
+    return response.json();
+  },
+};
