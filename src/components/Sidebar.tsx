@@ -83,7 +83,17 @@ export function Sidebar() {
       {/* Light/Dark Mode Toggle */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-medium text-gray-700">Modo Claro</span>
+          <span className="text-sm font-medium text-gray-700">
+            Criado por:{" "}
+            <a
+              href="https://github.com/dhanielsales/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-violet-700 underline"
+            >
+              Dhaniel Sales
+            </a>
+          </span>
         </div>
       </div>
     </aside>
