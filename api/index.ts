@@ -29,13 +29,13 @@ fastify.addHook("onRequest", async (request, reply) => {
   const token = extractTokenFromHeader(request.headers.authorization);
 
   if (!token) {
-    return reply.code(401).send({ error: "Authentication required" });
+    return reply.code(403).send({ error: "Authentication required" });
   }
 
   const payload = verifyToken(token);
 
   if (!payload) {
-    return reply.code(401).send({ error: "Invalid or expired token" });
+    return reply.code(403).send({ error: "Invalid or expired token" });
   }
 
   // Attach user info to request

@@ -9,10 +9,28 @@ import type {
   CreatePaymentInput,
   UpdatePaymentInput,
 } from "../types/payment";
-import type { LoginInput, RegisterInput } from "../../db/validations";
 import { useAuthStore } from "../store/auth";
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
 const API_BASE = "/api";
+
+function handleUnauthorized() {
+  useAuthStore.getState().logout();
+  window.location.href = "/login";
+}
+
+async function handleResponse(response: Response) {
+  if (response.status === 403) {
+    handleUnauthorized();
+    throw new Error("Unauthorized access");
+  }
+  return response;
+}
 
 function getAuthHeaders(includeContentType = true): HeadersInit {
   const token = useAuthStore.getState().token;
@@ -23,18 +41,15 @@ function getAuthHeaders(includeContentType = true): HeadersInit {
 }
 
 export const authApi = {
-  register: async (
-    data: RegisterInput,
-    apiKey: string
-  ): Promise<{
-    user: { id: number; name: string; email: string };
-    token: string;
-  }> => {
+  register: async (data: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<{ user: User; token: string }> => {
     const response = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Registration-Key": apiKey,
       },
       body: JSON.stringify(data),
     });
@@ -45,12 +60,10 @@ export const authApi = {
     return response.json();
   },
 
-  login: async (
-    data: LoginInput
-  ): Promise<{
-    user: { id: number; name: string; email: string };
-    token: string;
-  }> => {
+  login: async (data: {
+    email: string;
+    password: string;
+  }): Promise<{ user: User; token: string }> => {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: {
@@ -65,17 +78,13 @@ export const authApi = {
     return response.json();
   },
 
-  me: async (): Promise<{
-    user: { id: number; name: string; email: string };
-  }> => {
-    const token = useAuthStore.getState().token;
+  me: async (): Promise<User> => {
     const response = await fetch(`${API_BASE}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
-      throw new Error("Failed to fetch user info");
+      throw new Error("Failed to fetch user");
     }
     return response.json();
   },
@@ -86,6 +95,7 @@ export const studentsApi = {
     const response = await fetch(`${API_BASE}/students`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch students");
     }
@@ -96,6 +106,7 @@ export const studentsApi = {
     const response = await fetch(`${API_BASE}/students/${id}`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch student");
     }
@@ -106,6 +117,7 @@ export const studentsApi = {
     const response = await fetch(`${API_BASE}/students/${id}/payments`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch student payments");
     }
@@ -118,6 +130,7 @@ export const studentsApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to create student");
@@ -131,6 +144,7 @@ export const studentsApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to update student");
@@ -143,6 +157,7 @@ export const studentsApi = {
       method: "DELETE",
       headers: getAuthHeaders(false),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to delete student");
     }
@@ -161,6 +176,7 @@ export const studentsApi = {
         body: JSON.stringify({ planId }),
       }
     );
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to update plan enrollment");
@@ -177,6 +193,7 @@ export const studentsApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ planId }),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to create plan enrollment");
@@ -190,6 +207,7 @@ export const plansApi = {
     const response = await fetch(`${API_BASE}/plans`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch plans");
     }
@@ -200,6 +218,7 @@ export const plansApi = {
     const response = await fetch(`${API_BASE}/plans/${id}`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch plan");
     }
@@ -212,6 +231,7 @@ export const plansApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to create plan");
@@ -225,6 +245,7 @@ export const plansApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to update plan");
@@ -237,6 +258,7 @@ export const plansApi = {
       method: "DELETE",
       headers: getAuthHeaders(false),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to delete plan");
     }
@@ -248,6 +270,7 @@ export const paymentsApi = {
     const response = await fetch(`${API_BASE}/payments`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch payments");
     }
@@ -258,6 +281,7 @@ export const paymentsApi = {
     const response = await fetch(`${API_BASE}/payments/${id}`, {
       headers: getAuthHeaders(),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to fetch payment");
     }
@@ -270,6 +294,7 @@ export const paymentsApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to create payment");
@@ -286,6 +311,7 @@ export const paymentsApi = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to update payment");
@@ -298,6 +324,7 @@ export const paymentsApi = {
       method: "DELETE",
       headers: getAuthHeaders(false),
     });
+    await handleResponse(response);
     if (!response.ok) {
       throw new Error("Failed to delete payment");
     }

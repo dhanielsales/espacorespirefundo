@@ -156,7 +156,7 @@ fastify.get("/api/auth/me", async (request, reply) => {
     const payload = verifyToken(token);
 
     if (!payload) {
-      return reply.code(401).send({ error: "Invalid or expired token" });
+      return reply.code(403).send({ error: "Invalid or expired token" });
     }
 
     // Find user to ensure they still exist
@@ -166,7 +166,7 @@ fastify.get("/api/auth/me", async (request, reply) => {
       .where(eq(users.id, payload.userId));
 
     if (existingUser.length === 0) {
-      return reply.code(401).send({ error: "User not found" });
+      return reply.code(403).send({ error: "Invalid or expired token" });
     }
 
     const user = existingUser[0];

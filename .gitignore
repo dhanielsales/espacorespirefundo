@@ -19,9 +19,6 @@ dist-ssr
 # Drizzle
 drizzle/
 
-# PostgreSQL data
-postgres_data/
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
