@@ -155,7 +155,7 @@ export function PaymentReceiptModal({
             Baixar PDF
           </Button>
           <Button
-            variant="brand-pink"
+            variant="brand-violet-light"
             onClick={handleCopyToClipboard}
             disabled={isGenerating}
             loading={isGenerating}

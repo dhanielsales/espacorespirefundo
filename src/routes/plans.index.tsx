@@ -16,10 +16,6 @@ export const Route = createFileRoute("/plans/")({
 
 const createColumns = (onEdit: (plan: Plan) => void): ColumnDef<Plan>[] => [
   {
-    accessorKey: "id",
-    header: "ID",
-  },
-  {
     accessorKey: "name",
     header: "Nome",
   },

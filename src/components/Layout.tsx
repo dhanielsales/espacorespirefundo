@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
 
   const handleLogout = () => {
     logout();
-    toast.success("Logged out successfully");
+    toast.success("Deslogado com sucesso!");
     navigate({ to: "/login" });
   };
 

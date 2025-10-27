@@ -56,7 +56,7 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
     defaultValues: {
       name: plan?.name || "",
       description: plan?.description || "",
-      monthlyFee: plan?.monthlyFee || 0,
+      monthlyFee: plan?.monthlyFee ? plan.monthlyFee / 100 : 0,
       isActive: plan?.isActive ?? 1,
     },
     onSubmit: async ({ value }) => {

@@ -32,15 +32,18 @@ export const users = pgTable("users", {
 export const students = pgTable("students", {
   id: uuid("id").primaryKey().defaultRandom(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  cpf: varchar("cpf", { length: 11 }), // Store without formatting: 11 digits
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 25 }),
   birthDate: date("birth_date").notNull(),
   parentName: varchar("parent_name", { length: 255 }),
+  parentCpf: varchar("parent_cpf", { length: 11 }), // Store without formatting: 11 digits
   parentEmail: varchar("parent_email", { length: 255 }),
   parentPhone: varchar("parent_phone", { length: 25 }),
   observations: text("observations"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at"), // Soft delete timestamp
 });
 
 // Plans table

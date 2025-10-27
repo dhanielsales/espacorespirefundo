@@ -10,6 +10,7 @@ import { useState } from "react";
 import { studentsApi } from "../../lib/api";
 import { StudentForm } from "../../components/StudentForm";
 import { useAuthStore } from "../../store/auth";
+import { formatCPF } from "../../lib/formatters";
 import { DataTable } from "../../components/ui/data-table";
 import { RowActions } from "../../components/ui/row-actions";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -46,21 +47,22 @@ function StudentsPage() {
 
   const columns: ColumnDef<Student>[] = [
     {
-      accessorKey: "id",
-      header: "ID",
+      accessorKey: "fullName",
+      header: "Nome do Aluno",
       cell: ({ row }) => (
         <Link
           className="text-sky-500 underline"
           to={`/students/$id`}
           params={{ id: row.original.id.toString() }}
         >
-          {row.original.id}
+          {row.original.fullName}
         </Link>
       ),
     },
     {
-      accessorKey: "fullName",
-      header: "Nome do Aluno",
+      accessorKey: "cpf",
+      header: "CPF do Aluno",
+      cell: ({ row }) => (row.original.cpf ? formatCPF(row.original.cpf) : "-"),
     },
     {
       accessorKey: "birthDate",
@@ -70,6 +72,12 @@ function StudentsPage() {
       accessorKey: "parentName",
       header: "Nome do Responsável",
       cell: ({ row }) => row.original.parentName || "-",
+    },
+    {
+      accessorKey: "parentCpf",
+      header: "CPF do Responsável",
+      cell: ({ row }) =>
+        row.original.parentCpf ? formatCPF(row.original.parentCpf) : "-",
     },
     {
       accessorKey: "parentPhone",

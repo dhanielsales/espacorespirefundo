@@ -34,14 +34,17 @@ export function SelectPlan({
 
   const options = useMemo(() => {
     if (!plans) return [{ label: "Selecione um plano", value: "0" }];
-
-    return [
+    const result = [
       { label: "Selecione um plano", value: "0" },
-      ...plans.map((plan) => ({
-        label: plan.name,
-        value: String(plan.id),
-      })),
-    ];
+      ...plans
+        .map((plan) => {
+          if (!plan.isActive) return null;
+          return { label: plan.name, value: String(plan.id) };
+        })
+        .filter(Boolean),
+    ] as Array<{ label: string; value: string }>;
+
+    return result;
   }, [plans]);
 
   return (

@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { FileText } from "lucide-react";
 import { DataTable } from "../components/ui/data-table";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { PaymentReceiptModal } from "../components/PaymentReceiptModal";
 import { paymentsApi } from "../lib/api";
 import type { StudentPayment } from "../types/payment";
 
@@ -17,67 +21,11 @@ const paymentMethodLabels: Record<string, string> = {
   pix: "PIX",
 };
 
-const columns: ColumnDef<StudentPayment>[] = [
-  {
-    accessorKey: "studentName",
-    header: "Aluno",
-  },
-  {
-    accessorKey: "planName",
-    header: "Plano",
-  },
-  {
-    accessorKey: "month",
-    header: "Mês",
-  },
-  {
-    accessorKey: "year",
-    header: "Ano",
-  },
-  {
-    accessorKey: "amount",
-    header: "Valor",
-    cell: ({ row }) => {
-      const amount = row.getValue("amount") as number;
-      return new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(amount / 100); // Convert from cents
-    },
-  },
-  {
-    accessorKey: "paymentMethod",
-    header: "Método",
-    cell: ({ row }) => {
-      const method = row.getValue("paymentMethod") as string | null;
-      if (!method) return "-";
-      return paymentMethodLabels[method] || method;
-    },
-  },
-  {
-    accessorKey: "paidAt",
-    header: "Data de Pagamento",
-    cell: ({ row }) => {
-      const paidAt = row.getValue("paidAt") as string | null;
-      if (!paidAt) return "-";
-      return new Date(paidAt).toLocaleDateString("pt-BR");
-    },
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const paidAt = row.getValue("paidAt") as string | null;
-      return (
-        <Badge variant={paidAt ? "success" : "warning"}>
-          {paidAt ? "Pago" : "Pendente"}
-        </Badge>
-      );
-    },
-  },
-];
-
 function PaymentsPage() {
+  const [selectedPayment, setSelectedPayment] = useState<StudentPayment | null>(
+    null
+  );
+
   const {
     data: payments,
     isLoading,
@@ -86,6 +34,84 @@ function PaymentsPage() {
     queryKey: ["payments"],
     queryFn: paymentsApi.getAll,
   });
+
+  const columns: ColumnDef<StudentPayment>[] = [
+    {
+      accessorKey: "studentName",
+      header: "Aluno",
+    },
+    {
+      accessorKey: "planName",
+      header: "Plano",
+    },
+    {
+      accessorKey: "month",
+      header: "Mês",
+    },
+    {
+      accessorKey: "year",
+      header: "Ano",
+    },
+    {
+      accessorKey: "amount",
+      header: "Valor",
+      cell: ({ row }) => {
+        const amount = row.getValue("amount") as number;
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        }).format(amount / 100); // Convert from cents
+      },
+    },
+    {
+      accessorKey: "paymentMethod",
+      header: "Método",
+      cell: ({ row }) => {
+        const method = row.getValue("paymentMethod") as string | null;
+        if (!method) return "-";
+        return paymentMethodLabels[method] || method;
+      },
+    },
+    {
+      accessorKey: "paidAt",
+      header: "Data de Pagamento",
+      cell: ({ row }) => {
+        const paidAt = row.getValue("paidAt") as string | null;
+        if (!paidAt) return "-";
+        return new Date(paidAt).toLocaleDateString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      },
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const paidAt = row.getValue("paidAt") as string | null;
+        return (
+          <Badge variant={paidAt ? "success" : "warning"}>
+            {paidAt ? "Pago" : "Pendente"}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Ações",
+      cell: ({ row }) => (
+        <Button
+          variant="brand-violet-outline"
+          size="sm"
+          className="gap-2"
+          onClick={() => setSelectedPayment(row.original)}
+        >
+          <FileText className="h-4 w-4" />
+          Ver Recibo
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -98,12 +124,29 @@ function PaymentsPage() {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={payments || []}
-        loading={isLoading}
-        error={error ? new Error(error.message) : null}
-      />
+      <div className="bg-white shadow rounded-lg overflow-hidden p-4">
+        <DataTable
+          columns={columns}
+          data={payments || []}
+          loading={isLoading}
+          error={error ? new Error(error.message) : null}
+        />
+      </div>
+
+      {selectedPayment && (
+        <PaymentReceiptModal
+          isOpen={true}
+          onClose={() => setSelectedPayment(null)}
+          studentName={selectedPayment.studentName || "N/A"}
+          planName={selectedPayment.planName || "N/A"}
+          amount={selectedPayment.amount}
+          month={selectedPayment.month}
+          year={selectedPayment.year}
+          paymentMethod={selectedPayment.paymentMethod || undefined}
+          paidAt={selectedPayment.paidAt || undefined}
+          receiptNumber={selectedPayment.id.toString()}
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { studentsApi } from "../lib/api";
 import type { CreateStudentInput, Student } from "../types/student";
 import { createStudentSchema } from "../../db/validations";
+import { formatCPF, cleanCPF } from "../lib/formatters";
 import { Modal } from "./ui/modal";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -61,10 +62,12 @@ export function StudentForm({
   const form = useForm({
     defaultValues: {
       fullName: student?.fullName || "",
+      cpf: student?.cpf ? formatCPF(student.cpf) : "",
       email: student?.email || "",
       phone: student?.phone || "",
       birthDate: student?.birthDate || "",
       parentName: student?.parentName || "",
+      parentCpf: student?.parentCpf ? formatCPF(student.parentCpf) : "",
       parentEmail: student?.parentEmail || "",
       parentPhone: student?.parentPhone || "",
       observations: student?.observations || "",
@@ -121,6 +124,37 @@ export function StudentForm({
                   onChange={(e) => field.handleChange(e.target.value)}
                   error={field.state.meta.errors.join(", ")}
                   required
+                />
+              )}
+            </form.Field>
+
+            <form.Field
+              name="cpf"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return undefined;
+                  const cleaned = cleanCPF(value);
+                  const result =
+                    createStudentSchema.shape.cpf.safeParse(cleaned);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <Input
+                  label="CPF do Aluno"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    const cleaned = cleanCPF(e.target.value);
+                    const formatted = formatCPF(cleaned);
+                    field.handleChange(formatted);
+                  }}
+                  error={field.state.meta.errors.join(", ")}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
                 />
               )}
             </form.Field>
@@ -265,6 +299,37 @@ export function StudentForm({
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   error={field.state.meta.errors.join(", ")}
+                />
+              )}
+            </form.Field>
+
+            <form.Field
+              name="parentCpf"
+              validators={{
+                onChange: ({ value }) => {
+                  if (!value) return undefined;
+                  const cleaned = cleanCPF(value);
+                  const result =
+                    createStudentSchema.shape.parentCpf.safeParse(cleaned);
+                  return result.success
+                    ? undefined
+                    : result.error.issues[0]?.message;
+                },
+              }}
+            >
+              {(field) => (
+                <Input
+                  label="CPF do Responsável"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    const cleaned = cleanCPF(e.target.value);
+                    const formatted = formatCPF(cleaned);
+                    field.handleChange(formatted);
+                  }}
+                  error={field.state.meta.errors.join(", ")}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
                 />
               )}
             </form.Field>

@@ -2,6 +2,12 @@ import { z } from "zod";
 
 export const createStudentSchema = z.object({
   fullName: z.string().min(1, "Nome completo é obrigatório").max(255),
+  cpf: z
+    .string()
+    .regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos")
+    .or(z.literal(""))
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   email: z
     .string()
     .email("Email inválido")
@@ -13,6 +19,12 @@ export const createStudentSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   parentName: z.string().max(255).optional(),
+  parentCpf: z
+    .string()
+    .regex(/^\d{11}$/, "CPF deve conter exatamente 11 dígitos")
+    .or(z.literal(""))
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   parentEmail: z
     .string()
     .email("Email inválido")
@@ -26,6 +38,12 @@ export const createStudentSchema = z.object({
 
 export const updateStudentSchema = z.object({
   fullName: z.string().min(1).max(255).optional(),
+  cpf: z
+    .string()
+    .regex(/^\d{11}$/)
+    .or(z.literal(""))
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   email: z.string().email().max(255).or(z.literal("")).optional(),
   phone: z.string().max(25).optional(),
   birthDate: z
@@ -33,6 +51,12 @@ export const updateStudentSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   parentName: z.string().max(255).optional(),
+  parentCpf: z
+    .string()
+    .regex(/^\d{11}$/)
+    .or(z.literal(""))
+    .optional()
+    .transform((val) => (val === "" ? undefined : val)),
   parentEmail: z.string().email().max(255).or(z.literal("")).optional(),
   parentPhone: z.string().max(25).optional(),
   observations: z.string().optional(),

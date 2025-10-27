@@ -10,6 +10,7 @@ import type {
   UpdatePaymentInput,
 } from "../types/payment";
 import { useAuthStore } from "../store/auth";
+import { cleanCPF } from "./formatters";
 
 interface User {
   id: number;
@@ -125,10 +126,17 @@ export const studentsApi = {
   },
 
   create: async (data: CreateStudentInput): Promise<Student> => {
+    // Clean CPF formatting before sending
+    const cleanedData = {
+      ...data,
+      cpf: data.cpf ? cleanCPF(data.cpf) : undefined,
+      parentCpf: data.parentCpf ? cleanCPF(data.parentCpf) : undefined,
+    };
+
     const response = await fetch(`${API_BASE}/students`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanedData),
     });
     await handleResponse(response);
     if (!response.ok) {
@@ -139,10 +147,17 @@ export const studentsApi = {
   },
 
   update: async (id: string, data: UpdateStudentInput): Promise<Student> => {
+    // Clean CPF formatting before sending
+    const cleanedData = {
+      ...data,
+      cpf: data.cpf ? cleanCPF(data.cpf) : undefined,
+      parentCpf: data.parentCpf ? cleanCPF(data.parentCpf) : undefined,
+    };
+
     const response = await fetch(`${API_BASE}/students/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanedData),
     });
     await handleResponse(response);
     if (!response.ok) {
@@ -166,14 +181,14 @@ export const studentsApi = {
   updatePlanEnrollment: async (
     studentId: string,
     enrollmentId: string,
-    planId: string
+    data: { planId: string; isActive?: number }
   ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(
       `${API_BASE}/students/${studentId}/plans/${enrollmentId}`,
       {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify(data),
       }
     );
     await handleResponse(response);
@@ -186,12 +201,12 @@ export const studentsApi = {
 
   createPlanEnrollment: async (
     studentId: string,
-    planId: string
+    data: { planId: string; isActive?: number }
   ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(`${API_BASE}/students/${studentId}/plans`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ planId }),
+      body: JSON.stringify(data),
     });
     await handleResponse(response);
     if (!response.ok) {

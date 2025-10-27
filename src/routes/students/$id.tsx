@@ -18,9 +18,11 @@ import {
   DollarSign,
   Plus,
   FileText,
+  CreditCard,
 } from "lucide-react";
 import { studentsApi } from "../../lib/api";
 import { useAuthStore } from "../../store/auth";
+import { formatCPF } from "../../lib/formatters";
 import {
   Card,
   CardContent,
@@ -86,11 +88,11 @@ function StudentDetail() {
     mutationFn: studentsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
-      toast.success("Student deleted successfully!");
+      toast.success("Estudante excluído com sucesso!");
       navigate({ to: "/students" });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to delete student");
+      toast.error(error.message || "Falha ao excluir estudante");
     },
   });
 
@@ -180,7 +182,7 @@ function StudentDetail() {
             </CardHeader>
           </Card>
 
-          {/* Contact Information */}
+          {/* Student's Information */}
           <Card>
             <CardHeader>
               <CardTitle className="text-xl">Informações do Aluno</CardTitle>
@@ -195,6 +197,24 @@ function StudentDetail() {
                     <p className="text-sm font-medium text-gray-500">Nome</p>
                     <p className="mt-1 text-sm text-gray-900">
                       {student.fullName || (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-brand-violet-100 p-2">
+                    <CreditCard className="h-5 w-5 text-brand-violet-700" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500">CPF</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {student.cpf ? (
+                        formatCPF(student.cpf)
+                      ) : (
                         <span className="text-gray-400 italic">
                           Não informado
                         </span>
@@ -288,6 +308,24 @@ function StudentDetail() {
 
                 <div className="flex items-start gap-3">
                   <div className="rounded-lg bg-brand-pink-100 p-2">
+                    <CreditCard className="h-5 w-5 text-brand-pink-700" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500">CPF</p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {student.parentCpf ? (
+                        formatCPF(student.parentCpf)
+                      ) : (
+                        <span className="text-gray-400 italic">
+                          Não informado
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-brand-pink-100 p-2">
                     <Mail className="h-5 w-5 text-brand-pink-700" />
                   </div>
                   <div className="flex-1">
@@ -352,7 +390,7 @@ function StudentDetail() {
                   )}
                 </div>
                 <Button
-                  variant="brand-pink"
+                  variant="brand-violet-light"
                   size="sm"
                   className="gap-2"
                   onClick={() => setIsAddPlanModalOpen(true)}
@@ -376,12 +414,12 @@ function StudentDetail() {
                             <h3 className="text-lg font-semibold text-gray-900">
                               {enrollment.planName}
                             </h3>
-                            {enrollment.planIsActive === 1 ? (
+                            {enrollment.enrollmentIsActive === 1 ? (
                               <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
                                 Ativo
                               </span>
                             ) : (
-                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                              <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
                                 Inativo
                               </span>
                             )}

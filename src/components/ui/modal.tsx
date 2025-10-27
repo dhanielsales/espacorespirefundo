@@ -55,7 +55,7 @@ export function Modal({
 
           <div className="max-h-[80vh] overflow-y-auto px-1 -mx-1">
             {isLoading ? (
-              <div className="flex justify-center items-center py-48">
+              <div className="flex justify-center items-center py-24">
                 <Spinner />
               </div>
             ) : (

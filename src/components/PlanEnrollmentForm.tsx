@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { studentsApi } from "../lib/api";
 import { Modal } from "./ui/modal";
 import { Button } from "./ui/button";
+import { Select } from "./ui/select";
 import { SelectPlan } from "./SelectPlan";
 import type { StudentPlanEnrollment } from "../types/student";
 
@@ -24,10 +25,10 @@ export function PlanEnrollmentForm({
   const isEditing = !!enrollment;
 
   const mutation = useMutation({
-    mutationFn: (planId: string) =>
+    mutationFn: (data: { planId: string; isActive: number }) =>
       isEditing
-        ? studentsApi.updatePlanEnrollment(studentId, enrollment.id, planId)
-        : studentsApi.createPlanEnrollment(studentId, planId),
+        ? studentsApi.updatePlanEnrollment(studentId, enrollment.id, data)
+        : studentsApi.createPlanEnrollment(studentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["student", studentId],
@@ -50,13 +51,17 @@ export function PlanEnrollmentForm({
   const form = useForm({
     defaultValues: {
       planId: enrollment?.planId || "",
+      isActive: enrollment?.enrollmentIsActive ?? 1,
     },
     onSubmit: async ({ value }) => {
       if (!value.planId || value.planId === "") {
         toast.error("Selecione um plano");
         return;
       }
-      mutation.mutate(value.planId);
+      mutation.mutate({
+        planId: value.planId,
+        isActive: value.isActive,
+      });
     },
   });
 
@@ -106,6 +111,31 @@ export function PlanEnrollmentForm({
           )}
         </form.Field>
 
+        <form.Field
+          name="isActive"
+          validators={{
+            onChange: ({ value }) => {
+              if (value === null || value === undefined) {
+                return "Status é obrigatório";
+              }
+            },
+          }}
+        >
+          {(field) => (
+            <Select
+              label="Status da Inscrição"
+              value={field.state.value.toString()}
+              onChange={(e) => field.handleChange(parseInt(e.target.value))}
+              error={field.state.meta.errors.join(", ")}
+              required
+              options={[
+                { value: "1", label: "Ativo" },
+                { value: "0", label: "Inativo" },
+              ]}
+            />
+          )}
+        </form.Field>
+
         <div className="flex justify-end gap-3 pt-4">
           <Button
             type="button"
@@ -117,7 +147,7 @@ export function PlanEnrollmentForm({
           </Button>
           <Button
             type="submit"
-            variant="brand-violet"
+            variant="brand-violet-light"
             disabled={mutation.isPending}
           >
             {mutation.isPending

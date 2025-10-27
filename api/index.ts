@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, isNull, and } from "drizzle-orm";
 
 import { db } from "../db/index.js";
 import {
@@ -8,11 +8,20 @@ import {
   plans,
   studentPayments,
   studentsToPlans,
+  users,
 } from "../db/schema.js";
 import { createStudentSchema, updateStudentSchema } from "../db/validations.js";
 import { verifyToken, extractTokenFromHeader } from "./auth-utils.js";
 
 const fastify = Fastify({ logger: true });
+
+// Helper function to clean CPF (remove formatting)
+function cleanCPF(cpf: string | null | undefined): string | null {
+  if (!cpf) return null;
+  // Remove all non-digit characters
+  const cleaned = cpf.replace(/\D/g, "");
+  return cleaned.length === 11 ? cleaned : null;
+}
 
 // Register CORS
 fastify.register(cors, {
@@ -23,6 +32,11 @@ fastify.register(cors, {
 fastify.addHook("onRequest", async (request, reply) => {
   // Skip auth for preflight requests
   if (request.method === "OPTIONS") {
+    return;
+  }
+
+  // Skip auth for public auth endpoints
+  if (request.url.startsWith("/api/auth/")) {
     return;
   }
 
@@ -38,15 +52,27 @@ fastify.addHook("onRequest", async (request, reply) => {
     return reply.code(403).send({ error: "Invalid or expired token" });
   }
 
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, payload.userId))
+    .limit(1);
+  if (!user) {
+    return reply.code(403).send({ error: "Invalid or expired token" });
+  }
+
   // Attach user info to request
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (request as any).user = payload;
+  (request as any).user = user;
 });
 
 // GET /api/students - List all students
 fastify.get("/api/students", async (request, reply) => {
   try {
-    const allStudents = await db.select().from(students);
+    const allStudents = await db
+      .select()
+      .from(students)
+      .where(isNull(students.deletedAt));
     return reply.code(200).send(allStudents);
   } catch (error) {
     fastify.log.error(error);
@@ -66,14 +92,22 @@ fastify.post("/api/students", async (request, reply) => {
       });
     }
 
-    const { planId, ...studentData } = validation.data;
+    const { planId, cpf, parentCpf, ...studentData } = validation.data;
+
+    // Clean CPF formatting (double safety: frontend + backend)
+    const cleanedCpf = cpf ? cleanCPF(cpf) : null;
+    const cleanedParentCpf = parentCpf ? cleanCPF(parentCpf) : null;
 
     // Create student and enrollment in a transaction
     const result = await db.transaction(async (tx) => {
       // Create student
       const newStudent = await tx
         .insert(students)
-        .values(studentData)
+        .values({
+          ...studentData,
+          cpf: cleanedCpf,
+          parentCpf: cleanedParentCpf,
+        })
         .returning();
 
       const student = newStudent[0];
@@ -107,7 +141,7 @@ fastify.get("/api/students/:id", async (request, reply) => {
     const [student] = await db
       .select()
       .from(students)
-      .where(eq(students.id, id))
+      .where(and(eq(students.id, id), isNull(students.deletedAt)))
       .limit(1);
 
     if (!student) {
@@ -223,7 +257,7 @@ fastify.post("/api/students/:id/plans", async (request, reply) => {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
-    const body = request.body as { planId?: string };
+    const body = request.body as { planId?: string; isActive?: number };
 
     if (!body.planId) {
       return reply.code(400).send({ error: "planId is required" });
@@ -252,12 +286,22 @@ fastify.post("/api/students/:id/plans", async (request, reply) => {
     }
 
     // Create the enrollment
+    const enrollmentData: {
+      studentId: string;
+      planId: string;
+      isActive?: number;
+    } = {
+      studentId: id,
+      planId: body.planId,
+    };
+
+    if (body.isActive !== undefined) {
+      enrollmentData.isActive = body.isActive;
+    }
+
     const [newEnrollment] = await db
       .insert(studentsToPlans)
-      .values({
-        studentId: id,
-        planId: body.planId,
-      })
+      .values(enrollmentData)
       .returning();
 
     return reply.code(201).send(newEnrollment);
@@ -279,7 +323,7 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
       return reply.code(400).send({ error: "Invalid ID" });
     }
 
-    const body = request.body as { planId?: string };
+    const body = request.body as { planId?: string; isActive?: number };
 
     if (!body.planId) {
       return reply.code(400).send({ error: "planId is required" });
@@ -302,9 +346,17 @@ fastify.put("/api/students/:id/plans/:enrollmentId", async (request, reply) => {
     }
 
     // Update the enrollment
+    const updateData: { planId: string; isActive?: number } = {
+      planId: body.planId,
+    };
+
+    if (body.isActive !== undefined) {
+      updateData.isActive = body.isActive;
+    }
+
     const updated = await db
       .update(studentsToPlans)
-      .set({ planId: body.planId })
+      .set(updateData)
       .where(eq(studentsToPlans.id, enrollmentId))
       .returning();
 
@@ -335,10 +387,20 @@ fastify.put("/api/students/:id", async (request, reply) => {
       });
     }
 
+    // Clean CPF formatting if provided (double safety: frontend + backend)
+    const { cpf, parentCpf, ...otherData } = validation.data;
+    const updateData = {
+      ...otherData,
+      ...(cpf !== undefined && { cpf: cpf ? cleanCPF(cpf) : null }),
+      ...(parentCpf !== undefined && {
+        parentCpf: parentCpf ? cleanCPF(parentCpf) : null,
+      }),
+    };
+
     const updatedStudent = await db
       .update(students)
-      .set(validation.data)
-      .where(eq(students.id, id))
+      .set(updateData)
+      .where(and(eq(students.id, id), isNull(students.deletedAt)))
       .returning();
 
     if (updatedStudent.length === 0) {
@@ -352,7 +414,7 @@ fastify.put("/api/students/:id", async (request, reply) => {
   }
 });
 
-// DELETE /api/students/:id - Delete a student
+// DELETE /api/students/:id - Soft delete a student
 fastify.delete("/api/students/:id", async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
@@ -361,9 +423,11 @@ fastify.delete("/api/students/:id", async (request, reply) => {
       return reply.code(400).send({ error: "Invalid student ID" });
     }
 
+    // Soft delete by setting deletedAt timestamp
     const deletedStudent = await db
-      .delete(students)
-      .where(eq(students.id, id))
+      .update(students)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(students.id, id), isNull(students.deletedAt)))
       .returning();
 
     if (deletedStudent.length === 0) {

@@ -127,8 +127,10 @@ export function DataTable<TData, TValue>({
                       />
                     </svg>
                     <div>
-                      <p className="font-semibold">Error loading data</p>
-                      <p className="text-sm text-gray-600">{error.message}</p>
+                      <p className="font-semibold">Erro ao carregar dados</p>
+                      <p className="text-sm text-gray-600">
+                        Mensagem do servidor: {error.message}
+                      </p>
                     </div>
                   </div>
                 </TableCell>

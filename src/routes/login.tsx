@@ -26,11 +26,11 @@ function LoginPage() {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       setAuth(data.user, data.token);
-      toast.success("Login successful!");
+      toast.success("Login com sucesso!");
       navigate({ to: "/" });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to login");
+      toast.error(error.message || "Falha ao fazer login");
     },
   });
 

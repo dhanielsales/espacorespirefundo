@@ -13,25 +13,30 @@ export interface StudentPlanEnrollment {
 export interface Student {
   id: string; // UUID
   fullName: string;
+  cpf: string | null;
   email: string | null;
   phone: string | null;
   birthDate: string;
   parentName: string | null;
+  parentCpf: string | null;
   parentEmail: string | null;
   parentPhone: string | null;
   observations: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
   // Plan enrollments
   plans: StudentPlanEnrollment[];
 }
 
 export interface CreateStudentInput {
   fullName: string;
+  cpf?: string;
   email?: string;
   phone?: string;
   birthDate: string;
   parentName?: string;
+  parentCpf?: string;
   parentEmail?: string;
   parentPhone?: string;
   observations?: string;
@@ -40,10 +45,12 @@ export interface CreateStudentInput {
 
 export interface UpdateStudentInput {
   fullName?: string;
+  cpf?: string;
   email?: string;
   phone?: string;
   birthDate?: string;
   parentName?: string;
+  parentCpf?: string;
   parentEmail?: string;
   parentPhone?: string;
   observations?: string;

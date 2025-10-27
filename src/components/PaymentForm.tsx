@@ -330,7 +330,7 @@ export function PaymentForm({
           </Button>
           <Button
             type="submit"
-            variant="brand-pink"
+            variant="brand-violet-light"
             loading={mutation.isPending}
           >
             Registrar
@@ -362,7 +362,7 @@ export function PaymentForm({
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmSubmit}
-              className="bg-brand-pink-700 hover:bg-brand-pink-700/90"
+              variant="brand-violet-light"
             >
               Confirmar Pagamento
             </AlertDialogAction>
