@@ -55,7 +55,6 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@tailwindcss/postcss": "^4.1.16",
-    "@tanstack/router-devtools": "^1.133.32",
     "@tanstack/router-plugin": "^1.133.32",
     "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.10",
