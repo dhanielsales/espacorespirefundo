@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const JWT_EXPIRES_IN = "7d";
+const JWT_EXPIRES_IN = "1d";
 
 export interface JWTPayload {
   userId: string;
