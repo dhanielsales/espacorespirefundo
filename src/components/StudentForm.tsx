@@ -155,12 +155,6 @@ export function StudentForm({
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
                   error={field.state.meta.errors.join(", ")}
-                  helperText={
-                    <>
-                      Campo formatado com Mes/Dia/Ano. <br /> Exemplo:
-                      07/19/2000 = 19 de Julho de 2000.
-                    </>
-                  }
                   required
                 />
               )}
