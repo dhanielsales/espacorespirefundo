@@ -31,7 +31,8 @@ function LoginPage() {
       navigate({ to: "/" });
     },
     onError: (error) => {
-      toast.error(error.message || "Falha ao fazer login");
+      console.error(error);
+      toast.error("Falha ao fazer login");
     },
   });
 

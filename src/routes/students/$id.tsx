@@ -92,7 +92,8 @@ function StudentDetail() {
       navigate({ to: "/students" });
     },
     onError: (error) => {
-      toast.error(error.message || "Falha ao excluir estudante");
+      console.error(error);
+      toast.error("Falha ao excluir estudante");
     },
   });
 

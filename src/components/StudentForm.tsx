@@ -52,9 +52,9 @@ export function StudentForm({
       onClose();
     },
     onError: (error) => {
+      console.error(error);
       toast.error(
-        error.message ||
-          (isEditing ? "Falha ao atualizar aluno" : "Falha ao criar aluno")
+        isEditing ? "Falha ao atualizar aluno" : "Falha ao criar aluno"
       );
     },
   });

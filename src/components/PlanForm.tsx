@@ -55,7 +55,8 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
       onClose();
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao salvar plano: ${error.message}`);
+      console.error(error);
+      toast.error(`Erro ao salvar plano`);
       setPendingSubmitValue(null);
     },
   });
