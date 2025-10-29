@@ -35,7 +35,7 @@ import { Spinner } from "../../components/ui/spinner";
 import { StudentForm } from "../../components/StudentForm";
 import { PaymentForm } from "../../components/PaymentForm";
 import { PlanEnrollmentForm } from "../../components/PlanEnrollmentForm";
-import { DeleteConfirmationAlert } from "../../components/DeleteConfirmationAlert";
+import { ConfirmationAlert } from "../../components/DeleteConfirmationAlert";
 import { PaymentReceiptModal } from "../../components/PaymentReceiptModal";
 import type { StudentPlanEnrollment } from "../../types/student";
 import type { StudentPayment } from "../../types/payment";
@@ -165,9 +165,10 @@ function StudentDetail() {
                     <Pencil className="h-4 w-4" />
                     Editar
                   </Button>
-                  <DeleteConfirmationAlert
+                  <ConfirmationAlert
                     onConfirm={handleDelete}
                     isPending={deleteMutation.isPending}
+                    confirmText="Sim, excluir"
                     description={
                       <>
                         Esta ação não pode ser desfeita. Isso excluirá
@@ -180,7 +181,7 @@ function StudentDetail() {
                       <Trash2 className="h-4 w-4" />
                       Excluir
                     </Button>
-                  </DeleteConfirmationAlert>
+                  </ConfirmationAlert>
                 </div>
               </div>
             </CardHeader>
@@ -420,11 +421,16 @@ function StudentDetail() {
                             </h3>
                             {enrollment.enrollmentIsActive === 1 ? (
                               <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
-                                Ativo
+                                Inscrição Ativa
                               </span>
                             ) : (
                               <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                                Inativo
+                                Inscrição Inativa
+                              </span>
+                            )}
+                            {enrollment.planIsActive === 0 && (
+                              <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded mr-2">
+                                Plano Inativo
                               </span>
                             )}
                           </div>
@@ -440,6 +446,12 @@ function StudentDetail() {
                           size="sm"
                           className="gap-2"
                           onClick={() => setEditingPlan(enrollment)}
+                          disabled={enrollment.planIsActive === 0}
+                          title={
+                            enrollment.planIsActive === 0
+                              ? "Não é possível editar uma inscrição de um plano inativo"
+                              : ""
+                          }
                         >
                           <Pencil className="h-4 w-4" />
                           Editar

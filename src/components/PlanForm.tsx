@@ -1,5 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import toast from "react-hot-toast";
 
@@ -8,6 +9,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { Select } from "./ui/select";
+import { ConfirmationAlert } from "./DeleteConfirmationAlert";
 import { plansApi } from "../lib/api";
 import type { Plan } from "../types/plan";
 
@@ -27,6 +29,10 @@ const planSchema = z.object({
 export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
   const queryClient = useQueryClient();
   const isEditMode = !!plan;
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingSubmitValue, setPendingSubmitValue] = useState<z.infer<
+    typeof planSchema
+  > | null>(null);
 
   const mutation = useMutation({
     mutationFn: (data: z.infer<typeof planSchema>) => {
@@ -45,12 +51,23 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
           ? "Plano atualizado com sucesso!"
           : "Plano criado com sucesso!"
       );
+      setPendingSubmitValue(null);
       onClose();
     },
     onError: (error: Error) => {
       toast.error(`Erro ao salvar plano: ${error.message}`);
+      setPendingSubmitValue(null);
     },
   });
+
+  const handleConfirmedSubmit = () => {
+    if (pendingSubmitValue) {
+      mutation.mutateAsync(pendingSubmitValue).then(() => {
+        form.reset();
+        setShowConfirmDialog(false);
+      });
+    }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -60,9 +77,20 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
       isActive: plan?.isActive ?? 1,
     },
     onSubmit: async ({ value }) => {
-      mutation.mutateAsync(value).then(() => {
-        form.reset();
-      });
+      // Check if we're editing and changing from active (1) to inactive (0)
+      const isDeactivating =
+        isEditMode && plan?.isActive === 1 && value.isActive === 0;
+
+      if (isDeactivating) {
+        // Show confirmation dialog
+        setPendingSubmitValue(value);
+        setShowConfirmDialog(true);
+      } else {
+        // Submit directly
+        mutation.mutateAsync(value).then(() => {
+          form.reset();
+        });
+      }
     },
   });
 
@@ -176,6 +204,24 @@ export function PlanForm({ isOpen, onClose, plan }: PlanFormProps) {
           </Button>
         </div>
       </form>
+
+      <ConfirmationAlert
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title="Desativar Plano"
+        onConfirm={handleConfirmedSubmit}
+        isPending={mutation.isPending}
+        cancelText="Cancelar"
+        confirmText="Sim, desativar"
+        description={
+          <>
+            Tem certeza que deseja desativar este plano?{" "}
+            <strong>Todos os alunos </strong> matriculados neste plano terão
+            suas matriculas desativadas e o plano{" "}
+            <strong>não estará mais disponível</strong> para novas matrículas.
+          </>
+        }
+      />
     </Modal>
   );
 }

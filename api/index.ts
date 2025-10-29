@@ -620,24 +620,48 @@ fastify.put("/api/plans/:id", async (request, reply) => {
   };
 
   try {
-    const [updatedPlan] = await db
-      .update(plans)
-      .set({
-        ...(body.name !== undefined && { name: body.name }),
-        ...(body.description !== undefined && {
-          description: body.description,
-        }),
-        ...(body.monthlyFee !== undefined && { monthlyFee: body.monthlyFee }),
-        ...(body.isActive !== undefined && { isActive: body.isActive }),
-      })
+    // Get current plan state
+    const [currentPlan] = await db
+      .select()
+      .from(plans)
       .where(eq(plans.id, id))
-      .returning();
+      .limit(1);
 
-    if (!updatedPlan) {
+    if (!currentPlan) {
       return reply.code(404).send({ error: "Plan not found" });
     }
 
-    return reply.code(200).send(updatedPlan);
+    // Check if we're deactivating the plan (from active to inactive)
+    const isDeactivating = currentPlan.isActive === 1 && body.isActive === 0;
+
+    // Update plan and related enrollments in a transaction
+    const result = await db.transaction(async (tx) => {
+      // Update the plan
+      const [updatedPlan] = await tx
+        .update(plans)
+        .set({
+          ...(body.name !== undefined && { name: body.name }),
+          ...(body.description !== undefined && {
+            description: body.description,
+          }),
+          ...(body.monthlyFee !== undefined && { monthlyFee: body.monthlyFee }),
+          ...(body.isActive !== undefined && { isActive: body.isActive }),
+        })
+        .where(eq(plans.id, id))
+        .returning();
+
+      // If deactivating the plan, deactivate all related enrollments
+      if (isDeactivating) {
+        await tx
+          .update(studentsToPlans)
+          .set({ isActive: 0 })
+          .where(eq(studentsToPlans.planId, id));
+      }
+
+      return updatedPlan;
+    });
+
+    return reply.code(200).send(result);
   } catch (error) {
     fastify.log.error(error);
     return reply.code(500).send({ error: "Failed to update plan" });
