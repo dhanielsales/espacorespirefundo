@@ -4,7 +4,7 @@ export interface StudentPayment {
   month: number;
   year: number;
   amount: number;
-  paymentMethod?: "cash" | "credit_card" | "debit_card" | "pix" | null;
+  paymentMethod?: PaymentMethod | null;
   paidAt?: string | null;
   observations?: string | null;
   createdAt: string;
@@ -15,14 +15,12 @@ export interface StudentPayment {
   planName?: string | null;
 }
 
-export type paymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
-
 export interface CreatePaymentInput {
   studentToPlanId: string; // UUID
   month: number;
   year: number;
   amount: number;
-  paymentMethod?: paymentMethod;
+  paymentMethod?: PaymentMethod;
   observations?: string;
 }
 
@@ -30,7 +28,7 @@ export interface UpdatePaymentInput {
   month?: number;
   year?: number;
   amount?: number;
-  paymentMethod?: paymentMethod;
+  paymentMethod?: PaymentMethod;
   observations?: string;
 }
 
@@ -38,7 +36,7 @@ export interface CreatePaymentInput {
   studentToPlanId: string; // UUID
   month: number;
   year: number;
-  paymentMethod?: "cash" | "credit_card" | "debit_card" | "pix";
+  paymentMethod?: PaymentMethod;
   paidAt?: string;
   observations?: string;
 }
@@ -46,7 +44,16 @@ export interface CreatePaymentInput {
 export interface UpdatePaymentInput {
   month?: number;
   year?: number;
-  paymentMethod?: "cash" | "credit_card" | "debit_card" | "pix";
+  paymentMethod?: PaymentMethod;
   paidAt?: string;
   observations?: string;
 }
+
+export type PaymentMethod = "cash" | "credit_card" | "debit_card" | "pix";
+
+export const paymentMethodsLabels: Record<string, string> = {
+  cash: "Dinheiro",
+  credit_card: "Cartão de Crédito",
+  debit_card: "Cartão de Débito",
+  pix: "PIX",
+};

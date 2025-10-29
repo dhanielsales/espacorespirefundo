@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog";
 import { PaymentReceiptModal } from "./PaymentReceiptModal";
+import { paymentMethodsLabels } from "@/types/payment";
 
 interface PaymentFormProps {
   isOpen: boolean;
@@ -353,6 +354,10 @@ export function PaymentForm({
                   style: "currency",
                   currency: "BRL",
                 }).format(form.state.values.amount)}
+              </strong>{" "}
+              no{" "}
+              <strong>
+                {paymentMethodsLabels[form.state.values.paymentMethod]}
               </strong>{" "}
               para o aluno <strong>{student?.fullName}</strong> no plano{" "}
               <strong>{plan}</strong>.
