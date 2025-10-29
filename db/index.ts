@@ -1,6 +1,6 @@
-import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { drizzle as drizzleNeonWs } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzlePostgres } from "drizzle-orm/node-postgres";
-import { neon } from "@neondatabase/serverless";
+import { Pool as NeonPool } from "@neondatabase/serverless";
 import { Pool } from "pg";
 
 import * as schema from "./schema.js";
@@ -14,8 +14,9 @@ const isNeon = process.env.DATABASE_URL.includes("neon.tech");
 
 function createDatabase() {
   if (isNeon) {
-    const sql = neon(process.env.DATABASE_URL!);
-    return drizzleNeon(sql, { schema });
+    // Use WebSocket driver for Neon (supports transactions)
+    const pool = new NeonPool({ connectionString: process.env.DATABASE_URL! });
+    return drizzleNeonWs(pool, { schema });
   } else {
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL!,
