@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 import { DataTable } from "../components/ui/data-table";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { PaymentReceiptModal } from "../components/PaymentReceiptModal";
+import { ExportPaymentsModal } from "../components/ExportPaymentsModal";
 import { SelectPlan } from "../components/SelectPlan";
 import { paymentsApi } from "../lib/api";
 import { useDebounce } from "../hooks/useDebounce";
@@ -28,6 +29,7 @@ function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<StudentPayment | null>(
     null
   );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
@@ -154,6 +156,14 @@ function PaymentsPage() {
             Histórico de pagamentos dos alunos
           </p>
         </div>
+        <Button
+          variant="brand-violet-outline"
+          className="gap-2"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <Download className="h-4 w-4" />
+          Exportar
+        </Button>
       </div>
 
       <div className="bg-white shadow rounded-lg overflow-hidden p-4">
@@ -206,6 +216,11 @@ function PaymentsPage() {
           receiptNumber={selectedPayment.id.toString()}
         />
       )}
+
+      <ExportPaymentsModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </div>
   );
 }

@@ -374,6 +374,25 @@ export const paymentsApi = {
     }
     return response.json();
   },
+
+  exportByMonth: async (month: number, year: number): Promise<Blob> => {
+    const queryParams = new URLSearchParams({
+      month: month.toString(),
+      year: year.toString(),
+    });
+    const response = await fetch(
+      `${API_BASE}/payments/export?${queryParams}`,
+      {
+        headers: getAuthHeaders(false),
+      }
+    );
+    await handleResponse(response);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to export payments");
+    }
+    return response.blob();
+  },
 };
 
 export interface DashboardStats {

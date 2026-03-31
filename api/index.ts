@@ -86,7 +86,7 @@ fastify.get("/api/students", async (request, reply) => {
       conditions.push(
         sql`${students.fullName} ILIKE ${`%${query.search}%`} OR ${
           students.cpf
-        } ILIKE ${`%${cleanCPF(query.search)}%`}`
+        } ILIKE ${`%${cleanCPF(query.search)}%`}`,
       );
     }
 
@@ -244,7 +244,7 @@ fastify.get("/api/students/:id/payments", async (request, reply) => {
       .from(studentPayments)
       .innerJoin(
         studentsToPlans,
-        eq(studentPayments.studentToPlanId, studentsToPlans.id)
+        eq(studentPayments.studentToPlanId, studentsToPlans.id),
       )
       .innerJoin(students, eq(studentsToPlans.studentId, students.id))
       .innerJoin(plans, eq(studentsToPlans.planId, plans.id))
@@ -691,7 +691,7 @@ fastify.get("/api/payments", async (request, reply) => {
       conditions.push(
         sql`${students.fullName} ILIKE ${`%${query.search}%`} OR ${
           students.cpf
-        } ILIKE ${`%${cleanCPF(query.search)}%`}`
+        } ILIKE ${`%${cleanCPF(query.search)}%`}`,
       );
     }
 
@@ -705,7 +705,7 @@ fastify.get("/api/payments", async (request, reply) => {
       .from(studentPayments)
       .leftJoin(
         studentsToPlans,
-        eq(studentPayments.studentToPlanId, studentsToPlans.id)
+        eq(studentPayments.studentToPlanId, studentsToPlans.id),
       )
       .leftJoin(students, eq(studentsToPlans.studentId, students.id))
       .leftJoin(plans, eq(studentsToPlans.planId, plans.id));
@@ -736,7 +736,7 @@ fastify.get("/api/payments", async (request, reply) => {
       .from(studentPayments)
       .leftJoin(
         studentsToPlans,
-        eq(studentPayments.studentToPlanId, studentsToPlans.id)
+        eq(studentPayments.studentToPlanId, studentsToPlans.id),
       )
       .leftJoin(students, eq(studentsToPlans.studentId, students.id))
       .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
@@ -767,6 +767,110 @@ fastify.get("/api/payments", async (request, reply) => {
   }
 });
 
+// GET /api/payments/export - Export all payments for a given month/year as CSV
+fastify.get("/api/payments/export", async (request, reply) => {
+  const query = request.query as { month?: string; year?: string };
+
+  const month = parseInt(query.month || "");
+  const year = parseInt(query.year || "");
+
+  if (!month || month < 1 || month > 12 || !year || year < 2000) {
+    return reply
+      .code(400)
+      .send({ error: "Valid month (1-12) and year are required" });
+  }
+
+  try {
+    const allPayments = await db
+      .select({
+        studentName: students.fullName,
+        planName: plans.name,
+        month: studentPayments.month,
+        year: studentPayments.year,
+        amount: studentPayments.amount,
+        paymentMethod: studentPayments.paymentMethod,
+        paidAt: studentPayments.paidAt,
+        observations: studentPayments.observations,
+      })
+      .from(studentPayments)
+      .leftJoin(
+        studentsToPlans,
+        eq(studentPayments.studentToPlanId, studentsToPlans.id),
+      )
+      .leftJoin(students, eq(studentsToPlans.studentId, students.id))
+      .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
+      .where(
+        and(eq(studentPayments.month, month), eq(studentPayments.year, year)),
+      )
+      .orderBy(desc(studentPayments.paidAt));
+
+    const paymentMethodLabels: Record<string, string> = {
+      cash: "Dinheiro",
+      credit_card: "Cartão de Crédito",
+      debit_card: "Cartão de Débito",
+      pix: "PIX",
+    };
+
+    const escapeCSV = (value: string | null | undefined): string => {
+      if (value === null || value === undefined) return "";
+      const str = String(value);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const headers = [
+      "Aluno",
+      "Plano",
+      "Mês",
+      "Ano",
+      "Valor (R$)",
+      "Método de Pagamento",
+      "Data de Pagamento",
+      "Status",
+      "Observações",
+    ];
+
+    const rows = allPayments.map((p) => [
+      escapeCSV(p.studentName),
+      escapeCSV(p.planName),
+      String(p.month),
+      String(p.year),
+      p.amount !== null ? (p.amount / 100).toFixed(2) : "",
+      escapeCSV(
+        p.paymentMethod
+          ? (paymentMethodLabels[p.paymentMethod] ?? p.paymentMethod)
+          : "",
+      ),
+      p.paidAt
+        ? new Date(p.paidAt).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "",
+      p.paidAt ? "Pago" : "Pendente",
+      escapeCSV(p.observations),
+    ]);
+
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const filename = `pagamentos-${String(month).padStart(2, "0")}-${year}.csv`;
+
+    reply
+      .code(200)
+      .header("Content-Type", "text/csv; charset=utf-8")
+      .header("Content-Disposition", `attachment; filename="${filename}"`)
+      .send("\uFEFF" + csv); // BOM for Excel UTF-8 compatibility
+  } catch (error) {
+    fastify.log.error(error);
+    return reply.code(500).send({ error: "Failed to export payments" });
+  }
+});
+
 // GET /api/payments/:id - Get single payment
 fastify.get("/api/payments/:id", async (request, reply) => {
   const { id } = request.params as { id: string };
@@ -793,7 +897,7 @@ fastify.get("/api/payments/:id", async (request, reply) => {
       .from(studentPayments)
       .leftJoin(
         studentsToPlans,
-        eq(studentPayments.studentToPlanId, studentsToPlans.id)
+        eq(studentPayments.studentToPlanId, studentsToPlans.id),
       )
       .leftJoin(students, eq(studentsToPlans.studentId, students.id))
       .leftJoin(plans, eq(studentsToPlans.planId, plans.id))
@@ -930,8 +1034,8 @@ fastify.get("/api/dashboard/stats", async (request, reply) => {
         and(
           eq(studentPayments.month, currentMonth),
           eq(studentPayments.year, currentYear),
-          isNotNull(studentPayments.paidAt)
-        )
+          isNotNull(studentPayments.paidAt),
+        ),
       );
 
     // Total active plans (with at least one active enrollment)
@@ -964,7 +1068,7 @@ fastify.get("/api/dashboard/students-chart", async (request, reply) => {
       const date = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - i,
-        1
+        1,
       );
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
@@ -981,9 +1085,9 @@ fastify.get("/api/dashboard/students-chart", async (request, reply) => {
             sql`${students.createdAt} <= ${endOfMonth.toISOString()}`,
             or(
               isNull(students.deletedAt),
-              sql`${students.deletedAt} > ${endOfMonth.toISOString()}`
-            )
-          )
+              sql`${students.deletedAt} > ${endOfMonth.toISOString()}`,
+            ),
+          ),
         );
 
       months.push({
@@ -1013,7 +1117,7 @@ fastify.get("/api/dashboard/revenue-chart", async (request, reply) => {
       const date = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth() - i,
-        1
+        1,
       );
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
@@ -1029,8 +1133,8 @@ fastify.get("/api/dashboard/revenue-chart", async (request, reply) => {
           and(
             eq(studentPayments.month, month),
             eq(studentPayments.year, year),
-            isNotNull(studentPayments.paidAt)
-          )
+            isNotNull(studentPayments.paidAt),
+          ),
         );
 
       months.push({
