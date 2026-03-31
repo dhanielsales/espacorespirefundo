@@ -27,7 +27,7 @@ const paymentMethodLabels: Record<string, string> = {
 
 function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<StudentPayment | null>(
-    null
+    null,
   );
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [page, setPage] = useState(1);

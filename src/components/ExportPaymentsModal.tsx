@@ -27,7 +27,10 @@ function getLast12Months(): Array<{ value: string; label: string }> {
   return options;
 }
 
-export function ExportPaymentsModal({ isOpen, onClose }: ExportPaymentsModalProps) {
+export function ExportPaymentsModal({
+  isOpen,
+  onClose,
+}: ExportPaymentsModalProps) {
   const monthOptions = getLast12Months();
   const [selected, setSelected] = useState(monthOptions[0].value);
   const [isExporting, setIsExporting] = useState(false);
@@ -72,11 +75,7 @@ export function ExportPaymentsModal({ isOpen, onClose }: ExportPaymentsModalProp
           options={monthOptions}
         />
         <div className="flex justify-end gap-2 pt-2">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            disabled={isExporting}
-          >
+          <Button variant="ghost" onClick={onClose} disabled={isExporting}>
             Cancelar
           </Button>
           <Button

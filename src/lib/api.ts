@@ -204,7 +204,7 @@ export const studentsApi = {
   updatePlanEnrollment: async (
     studentId: string,
     enrollmentId: string,
-    data: { planId: string; isActive?: number }
+    data: { planId: string; isActive?: number },
   ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(
       `${API_BASE}/students/${studentId}/plans/${enrollmentId}`,
@@ -212,7 +212,7 @@ export const studentsApi = {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
-      }
+      },
     );
     await handleResponse(response);
     if (!response.ok) {
@@ -224,7 +224,7 @@ export const studentsApi = {
 
   createPlanEnrollment: async (
     studentId: string,
-    data: { planId: string; isActive?: number }
+    data: { planId: string; isActive?: number },
   ): Promise<{ id: string; studentId: string; planId: string }> => {
     const response = await fetch(`${API_BASE}/students/${studentId}/plans`, {
       method: "POST",
@@ -360,7 +360,7 @@ export const paymentsApi = {
 
   update: async (
     id: string,
-    data: UpdatePaymentInput
+    data: UpdatePaymentInput,
   ): Promise<StudentPayment> => {
     const response = await fetch(`${API_BASE}/payments/${id}`, {
       method: "PUT",
@@ -380,12 +380,9 @@ export const paymentsApi = {
       month: month.toString(),
       year: year.toString(),
     });
-    const response = await fetch(
-      `${API_BASE}/payments/export?${queryParams}`,
-      {
-        headers: getAuthHeaders(false),
-      }
-    );
+    const response = await fetch(`${API_BASE}/payments/export?${queryParams}`, {
+      headers: getAuthHeaders(false),
+    });
     await handleResponse(response);
     if (!response.ok) {
       const error = await response.json();
